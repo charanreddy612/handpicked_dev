@@ -1,5 +1,7 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { requireAuth } from '../../components/utils/checkAuth.js';
+requireAuth();
 ---
 
 <html lang="en">
