@@ -1,0 +1,26 @@
+import express from 'express';
+import cors from 'cors';
+import pkg from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+const { Pool } = pkg;
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.get('/', (req, res) => res.send('Backend running!'));
+
+app.get('/test-db', async (req, res) => {
+  const result = await pool.query('SELECT NOW()');
+  res.json(result.rows);
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Server listening on ${port}`));

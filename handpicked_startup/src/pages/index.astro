@@ -1,0 +1,17 @@
+<html lang="en">
+  <head>
+    <title>Redirecting...</title>
+    <meta http-equiv="refresh" content="0; URL=/login" />
+    <script type="text/javascript">
+      const auth = localStorage.getItem('auth');
+      if (auth) {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = '/login';
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

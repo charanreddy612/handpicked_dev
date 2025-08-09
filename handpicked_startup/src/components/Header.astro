@@ -1,0 +1,49 @@
+---
+import UserInfo from '../components/UserInfo.jsx';
+---
+
+<header role="banner" class="header" aria-label="Admin Header">
+  <div class="branding">
+    <h1 class="site-title">Handpicked Startup Admin</h1>
+  </div>
+
+  <div class="user-actions">
+    <UserInfo client:visible />
+  </div>
+  <style>
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: #1e293b;
+      color: #fff;
+    }
+
+    .site-title {
+      font-size: 1.5rem;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .username {
+      font-weight: bold;
+    }
+
+    button {
+      background: #ef4444;
+      border: none;
+      padding: 0.5rem 1rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #dc2626;
+    }
+  </style>
+</header>
