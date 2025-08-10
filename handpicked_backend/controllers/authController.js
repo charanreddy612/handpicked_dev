@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { supabase } from '../dbhelper/dbclient.js';
-import {bcrypt} from 'bcrypt';
+import bcrypt from 'bcrypt';
 
 export async function login(req, res) {
   const { username, password } = req.body;
