@@ -1,17 +1,40 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
 
-export const login = (req, res) => {
+export async function loginUser(req, res) {
   const { username, password } = req.body;
 
-  // Dummy login check
-  if (username === 'admin' && password === 'password') {
-    const token = jwt.sign({ username }, config.jwtSecret, { expiresIn: '1h' });
-    return res.json({ message: 'Login successful', token });
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password required' });
   }
 
-  res.status(401).json({ message: 'Invalid credentials' });
-};
+  // Fetch user by username
+  const { data: users, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', username)
+    .single();
+
+  if (error || !users) {
+    return res.status(401).json({ message: 'Invalid username or password' });
+  }
+
+  // Compare password with hash
+  const match = await bcrypt.compare(password, users.password_hash);
+  if (!match) {
+    return res.status(401).json({ message: 'Invalid username or password' });
+  }
+
+  // Generate JWT token
+  const token = jwt.sign(
+    { userId: users.id, username: users.username },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  res.json({ message: 'Login successful', token });
+}
+
 
 export const profile = (req, res) => {
   res.json({ message: 'Protected profile route', user: req.user });
