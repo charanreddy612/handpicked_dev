@@ -1,32 +1,27 @@
 import { useEffect, useState } from "react";
 
 export default function ProtectedRoute({ children }) {
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const auth = localStorage.getItem("auth");
-
-    if (!auth) {
-      window.location.href = "/login";
+    // This runs only in the browser
+    setIsClient(true);
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      setIsAuthenticated(true);
     } else {
-      setCheckingAuth(false);
+      window.location.href = "/login";
     }
   }, []);
 
-  if (checkingAuth) {
-    return (
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        fontSize: "1.2rem",
-        color: "#555"
-      }}>
-        Loading...
-      </div>
-    );
+  if (!isClient) {
+    return null;
   }
 
-  return children;
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
 }

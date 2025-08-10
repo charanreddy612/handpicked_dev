@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config.js';
 
-export async function loginUser(req, res) {
+export async function login(req, res) {
   const { username, password } = req.body;
 
   if (!username || !password) {

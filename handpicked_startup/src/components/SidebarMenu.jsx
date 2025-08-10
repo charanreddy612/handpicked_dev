@@ -1,69 +1,80 @@
-import { useState } from 'react';
+import { useState } from "react";
+import { FiFolder, FiPlus, FiEye } from "react-icons/fi";
 
 const menuItems = [
   {
     title: "Merchants",
-    children: ["Add Merchant", "View Merchants"],
+    icon: <FiFolder />,
+    children: [
+      { label: "Add Merchant", icon: <FiPlus /> },
+      { label: "View Merchants", icon: <FiEye /> },
+    ],
   },
   {
     title: "Coupons",
-    children: ["Add Coupon", "View Coupons"],
+    icon: <FiFolder />,
+    children: [
+      { label: "Add Coupon", icon: <FiPlus /> },
+      { label: "View Coupons", icon: <FiEye /> },
+    ],
   },
   {
     title: "Tags",
-    children: ["Add Tag", "Manage Tags"],
+    icon: <FiFolder />,
+    children: [
+      { label: "Add Tag", icon: <FiPlus /> },
+      { label: "Manage Tags", icon: <FiEye /> },
+    ],
   },
   {
     title: "Banners",
-    children: ["Upload Banner", "Manage Banners"],
+    icon: <FiFolder />,
+    children: [
+      { label: "Upload Banner", icon: <FiPlus /> },
+      { label: "Manage Banners", icon: <FiEye /> },
+    ],
   },
 ];
 
-export default function SidebarMenu() {
+export default function SidebarMenu({ isCollapsed }) {
   const [openIndex, setOpenIndex] = useState(null);
 
   const toggleIndex = (index) => {
-    setOpenIndex(prev => (prev === index ? null : index));
+    setOpenIndex((prev) => (prev === index ? null : index));
   };
 
   return (
-    <nav aria-label="Admin Sidebar Menu">
-      <ul role="list" style={{ listStyle: 'none', padding: 0 }}>
+    <nav aria-label="Admin Sidebar Menu" className="px-2">
+      <ul role="list" className="space-y-1">
         {menuItems.map((item, index) => (
           <li key={item.title}>
             <button
               onClick={() => toggleIndex(index)}
               aria-expanded={openIndex === index}
               aria-controls={`submenu-${index}`}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                background: 'none',
-                border: 'none',
-                padding: '0.5rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
+              className="flex items-center w-full p-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
             >
-              {item.title}
+              <span className="text-lg">{item.icon}</span>
+              {!isCollapsed && (
+                <span className="ml-3 font-medium">{item.title}</span>
+              )}
             </button>
-            {openIndex === index && (
+            {openIndex === index && !isCollapsed && (
               <ul
                 id={`submenu-${index}`}
                 role="group"
-                style={{
-                  paddingLeft: '1rem',
-                  marginTop: '0.25rem',
-                }}
+                className="pl-8 mt-1 space-y-1"
               >
                 {item.children.map((subItem) => (
-                  <li key={subItem}>
+                  <li key={subItem.label}>
                     <a
-                      href={`/dashboard/${subItem.toLowerCase().replace(/ /g, '-')}`}
-                      style={{ display: 'block', padding: '0.25rem 0' }}
+                      href={`/dashboard/${subItem.label
+                        .toLowerCase()
+                        .replace(/ /g, "-")}`}
+                      className="flex items-center p-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 rounded-md"
                     >
-                      {subItem}
+                      <span className="text-base">{subItem.icon}</span>
+                      <span className="ml-2">{subItem.label}</span>
                     </a>
                   </li>
                 ))}

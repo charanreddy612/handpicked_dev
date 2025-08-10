@@ -1,5 +1,41 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.menu {
+  list-style: none;
+  padding: 0;
+}
 
+.menu-button {
+  background: none;
+  border: none;
+  font-weight: bold;
+  padding: 0.5rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-button:hover {
+  background-color: #ececec;
+}
+
+.submenu {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  list-style-type: circle;
+}
+
+.submenu-link {
+  display: block;
+  padding: 0.25rem 0;
+  color: #333;
+  text-decoration: none;
+}
+
+.submenu-link:hover {
+  text-decoration: underline;
+}
 .menu {
   list-style: none;
   padding: 0;
