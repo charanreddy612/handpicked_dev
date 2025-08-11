@@ -1,4 +1,3 @@
-import React from "react";
 import { FiMenu, FiSun, FiMoon, FiLogOut } from "react-icons/fi";
 
 export default function Header({

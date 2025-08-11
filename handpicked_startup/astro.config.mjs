@@ -9,10 +9,7 @@ export default defineConfig({
     integrations: [react(), tailwind()],
     vite: {
       optimizeDeps: {
-        include: ['react-router-dom'],
+        include: [],
       },
-      ssr: {
-      noExternal: ['react-router-dom'],
-    },
     }
 });
