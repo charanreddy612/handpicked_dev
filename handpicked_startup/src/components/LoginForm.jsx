@@ -24,6 +24,7 @@ export default function LoginForm() {
         throw new Error(jsonResponse.message || "Login failed");
       }
 
+    localStorage.setItem("authToken", jsonResponse.token);
     localStorage.setItem("username", jsonResponse.user.email);
     localStorage.setItem("userid", jsonResponse.user.id);
     localStorage.setItem("role_id", jsonResponse.user.role_id);
