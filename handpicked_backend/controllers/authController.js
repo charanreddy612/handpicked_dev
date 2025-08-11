@@ -8,7 +8,7 @@ export async function login(req, res) {
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password required" });
   }
-
+console.log('Login request:', req.body);
   try {
     // Fetch user by user_id
     const { data: users, error } = await supabase
@@ -16,6 +16,8 @@ export async function login(req, res) {
       .select("id, email, password_hash, role_id")
       .eq("email", email)
       .limit(1);
+
+    console.log('Supabase response:', data, error);
 
     if (error) throw error;
 
