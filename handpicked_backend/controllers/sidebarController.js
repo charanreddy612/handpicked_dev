@@ -2,6 +2,7 @@ import { supabase } from '../dbhelper/dbclient.js';
 
 export const getSidebarMenu = async (req, res) => {
   try {
+    console.log('inside getsidebarMenu controller');
     const roleId = req.user?.role_id; // from JWT via protect middleware
 
     if (!roleId) {

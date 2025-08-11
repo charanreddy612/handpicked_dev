@@ -38,7 +38,9 @@ export default function LoginForm() {
     localStorage.setItem("sidebarMenus", JSON.stringify(menus));
 
     setLoading(false);
+    console.log("Current URL:", window.location.pathname);
     window.location.href = "/dashboard";
+    console.log("Redirected URL:", window.location.pathname);
     } catch (err) {
       alert(err.message);
       setLoading(false);
