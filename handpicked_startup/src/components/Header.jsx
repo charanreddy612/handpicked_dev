@@ -1,4 +1,5 @@
 import { FiMenu, FiLogOut } from "react-icons/fi";
+import {useState, useEffect} from "react";
 
 export default function Header({
   onToggleSidebar,
