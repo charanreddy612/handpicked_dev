@@ -1,4 +1,4 @@
-import { FiMenu, FiSun, FiMoon, FiLogOut } from "react-icons/fi";
+import { FiMenu, FiLogOut } from "react-icons/fi";
 
 export default function Header({
   onToggleSidebar,
@@ -8,6 +8,14 @@ export default function Header({
     localStorage.removeItem("authToken"); // Clear stored login
     window.location.href = "/login"; // Redirect to login page
   };
+  const [username, setUsername] = useState("");
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
+
   return (
     <header
       className="flex items-center justify-between px-4 py-2 bg-white shadow-md"
@@ -44,7 +52,7 @@ export default function Header({
 
         {/* Username / Profile */}
         <span className="text-gray-800 font-medium">
-          localStorage.getItem("username");
+          welcome {username};
         </span>
       </div>
     </header>
