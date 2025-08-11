@@ -44,7 +44,7 @@ export default function Header({
 
         {/* Username / Profile */}
         <span className="text-gray-800 font-medium">
-          Admin
+          localStorage.getItem("username");
         </span>
       </div>
     </header>

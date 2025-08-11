@@ -7,6 +7,7 @@ import merchantRoutes from './routes/merchantsRoutes.js';
 import couponRoutes from './routes/couponsRoutes.js';
 import bannerRoutes from './routes/bannersRoutes.js';
 import tagRoutes from './routes/tagsRoutes.js';
+import sidebarRoutes from './routes/sidebarRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/merchants', merchantRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/tags', tagRoutes);
+app.use('/api/sidebar', sidebarRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Handpicked Backend API' });

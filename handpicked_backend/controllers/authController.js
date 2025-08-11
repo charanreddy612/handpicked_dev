@@ -3,38 +3,57 @@ import { supabase } from '../dbhelper/dbclient.js';
 import bcrypt from 'bcrypt';
 
 export async function login(req, res) {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password required' });
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password required' });
   }
 
-  // Fetch user by username
+  try {
+  // Fetch user by user_id
   const { data: users, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('username', username)
-    .single();
+      .from('users')
+      .select('id, email, password_hash, role_id')
+      .eq('email', email)
+      .limit(1);
 
-  if (error || !users) {
-    return res.status(401).json({ message: 'Invalid username or password' });
+  if (error) throw error;
+
+  const user = users?.[0];
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid credentials' });
   }
 
   // Compare password with hash
-  const match = await bcrypt.compare(password, users.password_hash);
-  if (!match) {
-    return res.status(401).json({ message: 'Invalid username or password' });
+  const isMatch = await bcrypt.compare(password, users.password_hash);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Invalid credentials' });
   }
 
   // Generate JWT token
-  const token = jwt.sign(
-    { userId: users.id, username: users.username },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
+const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role_id: user.role_id, // 🔹 Important
+      },
+      config.jwtSecret,
+      { expiresIn: '1h' }
+    );
 
-  res.json({ message: 'Login successful', token });
-}
+  res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role_id: user.role_id,
+      },
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 
 export const profile = (req, res) => {

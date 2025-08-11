@@ -5,11 +5,9 @@ export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  console.log("LoginForm component loaded");
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    console.log(`Handle Submit called with : ${API_BASE_URL}`, { username, password });
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -25,12 +23,21 @@ export default function LoginForm() {
         throw new Error(jsonResponse.message || "Login failed");
       }
 
-      localStorage.setItem("authToken", jsonResponse.token);
-      localStorage.setItem("username", username);
-      console.log("auth token set in localStorage:", jsonResponse.token);
+    localStorage.setItem("username", jsonResponse.user.email);
+    localStorage.setItem("userid", jsonResponse.user.id);
+    localStorage.setItem("role_id", jsonResponse.user.role_id);
 
-      setLoading(false);
-      window.location.href = "/dashboard";
+    // Fetch sidebar menus using role_id
+    const sidebarRes = await fetch(`${API_BASE_URL}/api/sidebar`, {
+      headers: { Authorization: `Bearer ${jsonResponse.token}` },
+    });
+
+    if (!sidebarRes.ok) throw new Error('Failed to fetch sidebar');
+    const menus = await sidebarRes.json();
+    localStorage.setItem("sidebarMenus", JSON.stringify(menus));
+
+    setLoading(false);
+    window.location.href = "/dashboard";
     } catch (err) {
       alert(err.message);
       setLoading(false);
