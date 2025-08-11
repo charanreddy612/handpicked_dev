@@ -4,17 +4,7 @@ import { requireAuth } from '../../components/utils/CheckAuth.js';
 requireAuth();
 ---
 
-<html lang="en">
-  <DashboardLayout client:load>
-  <head>
-    <title>Admin Dashboard | Handpicked Startup</title>
-    <meta name="robots" content="noindex" />
-  </head>
-  <body>
-    <main role="main">
-      <h1>Welcome to the Dashboard</h1>
-      <p>This is a placeholder dashboard. Auth check is mocked via localStorage.</p>
-    </main>
-  </body>
-  </DashboardLayout>
-</html>
+<DashboardLayout>
+  <h1>Welcome to the Dashboard</h1>
+  <p>This is a placeholder dashboard. Auth check is mocked via localStorage.</p>
+</DashboardLayout>
