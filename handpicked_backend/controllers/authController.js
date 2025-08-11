@@ -11,18 +11,17 @@ export async function login(req, res) {
 console.log('Login request:', req.body);
   try {
     // Fetch user by user_id
-    const { data: users, error } = await supabase
+    const { data, error } = await supabase
       .from("users")
       .select("id, email, password_hash, role_id")
       .eq("email", email)
-      .limit(1);
+      .single();
 
     console.log('Supabase response:', data, error);
 
     if (error) throw error;
 
-    const user = users?.[0];
-    if (!user) {
+    if (!data) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -30,9 +29,8 @@ console.log('Login request:', req.body);
     if (!user.password_hash) {
       return res.status(500).json({ message: "Password not set for user" });
     }
-
     // Compare password with hash
-    const isMatch = await bcrypt.compare(password, users.password_hash);
+    const isMatch = await bcrypt.compare(password, data.password_hash);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
