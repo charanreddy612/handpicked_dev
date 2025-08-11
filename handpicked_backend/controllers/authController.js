@@ -26,7 +26,7 @@ console.log('Login request:', req.body);
     }
 
     // Check if password hash exists
-    if (!user.password_hash) {
+    if (!data.password_hash) {
       return res.status(500).json({ message: "Password not set for user" });
     }
     // Compare password with hash
@@ -38,9 +38,9 @@ console.log('Login request:', req.body);
     // Generate JWT token
     const token = jwt.sign(
       {
-        id: user.id,
-        email: user.email,
-        role_id: user.role_id, // 🔹 Important
+        id: data.id,
+        email: data.email,
+        role_id: data.role_id, // 🔹 Important
       },
       config.jwtSecret,
       { expiresIn: "1h" }
@@ -49,9 +49,9 @@ console.log('Login request:', req.body);
     res.json({
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        role_id: user.role_id,
+        id: data.id,
+        email: data.email,
+        role_id: data.role_id,
       },
     });
   } catch (err) {
