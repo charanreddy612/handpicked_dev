@@ -1,17 +1,18 @@
+---
+import "../styles/global.css";
+import AppRouter from '../components/AppRouter.jsx';
+---
+
 <html lang="en">
   <head>
-    <title>Redirecting...</title>
-    <meta http-equiv="refresh" content="0; URL=/login" />
-    <script type="text/javascript">
-      const authToken = localStorage.getItem("authToken");
-      if (authToken) {
-        window.location.href = "/dashboard";
-      } else {
-        window.location.href = "/login";
-      }
-    </script>
+    <title>Handpicked Startup Admin</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Other meta tags -->
   </head>
-  <body>
-    <p>Redirecting...</p>
+  <body class="bg-gray-100 text-gray-900">
+    <main role="main" class="min-h-screen flex items-center justify-center p-4">
+      <AppRouter client:load />
+    </main>
   </body>
-</html>
+</html>/

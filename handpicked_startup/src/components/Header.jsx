@@ -7,7 +7,7 @@ export default function Header({
 }) {
   const handleLogout = () => {
     localStorage.removeItem("authToken"); // Clear stored login
-    window.location.href = "/login"; // Redirect to login page
+    window.location.href = "/"; // Redirect to login page
   };
   const [username, setUsername] = useState("");
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function Header({
 
         {/* Username / Profile */}
         <span className="text-gray-800 font-medium">
-          welcome {username};
+          welcome {username}
         </span>
       </div>
     </header>

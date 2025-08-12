@@ -1,10 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config/api.js";
+// import pkg from 'react-router-dom';
+// const {useNavigate} = pkg;
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
@@ -13,7 +18,7 @@ export default function LoginForm() {
       const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email:username, password }),
+        body: JSON.stringify({ email: username, password }),
       });
 
       const jsonResponse = await res.json();
@@ -22,22 +27,24 @@ export default function LoginForm() {
         throw new Error(jsonResponse.message || "Login failed");
       }
 
-    localStorage.setItem("authToken", jsonResponse.token);
-    localStorage.setItem("username", jsonResponse.user.email);
-    localStorage.setItem("userid", jsonResponse.user.id);
-    localStorage.setItem("role_id", jsonResponse.user.role_id);
+      localStorage.setItem("authToken", jsonResponse.token);
+      localStorage.setItem("username", jsonResponse.user.email);
+      localStorage.setItem("userid", jsonResponse.user.id);
+      localStorage.setItem("role_id", jsonResponse.user.role_id);
 
-    // Fetch sidebar menus using role_id
-    const sidebarRes = await fetch(`${API_BASE_URL}/api/sidebar`, {
-      headers: { Authorization: `Bearer ${jsonResponse.token}` },
-    });
+      // Fetch sidebar menus using role_id
+      const sidebarRes = await fetch(`${API_BASE_URL}/api/sidebar`, {
+        headers: { Authorization: `Bearer ${jsonResponse.token}` },
+      });
 
-    if (!sidebarRes.ok) throw new Error('Failed to fetch sidebar');
-    const menus = await sidebarRes.json();
-    localStorage.setItem("sidebarMenus", JSON.stringify(menus));
+      if (!sidebarRes.ok) throw new Error("Failed to fetch sidebar");
+      const menus = await sidebarRes.json();
+      localStorage.setItem("sidebarMenus", JSON.stringify(menus));
 
-    setLoading(false);
-    window.location.href = "/dashboard";
+      setLoading(false);
+
+      // Use React Router navigation instead of window.location.href
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       alert(err.message);
       setLoading(false);

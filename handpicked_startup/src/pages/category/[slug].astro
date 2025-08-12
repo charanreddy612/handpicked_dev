@@ -1,0 +1,26 @@
+---
+import CategoryPage from '../../components/CategoryPage.jsx';
+const { slug } = Astro.params;
+const slugStr = slug || 'default';
+
+const categoryMeta = {
+  'health-and-wellness': {
+    title: 'Health & Wellness Coupons | Boost Your Wellbeing for Less',
+    description: 'Discover the latest verified Health & Wellness deals. Save on supplements, fitness gear, wellness apps, and more with handpicked coupons.'
+  },
+  // ... include other categories here ...
+  'default': {
+    title: 'Category Coupons & Deals | HandPicked Savings',
+    description: 'Explore verified category-wise savings from top stores. Updated daily with real-time working offers.'
+  }
+};
+
+const meta = categoryMeta[slugStr] || categoryMeta['default'];
+---
+
+<Astro.Head>
+  <title>{meta.title}</title>
+  <meta name="description" content={meta.description} />
+</Astro.Head>
+
+<CategoryPage client:load slug={slugStr} meta={meta} />
