@@ -41,7 +41,7 @@ export async function getStoresByTag(tagId) {
  */
 export async function searchStores(query) {
   try {
-    const res = await http.get(`/stores/search`, { params: { query } });
+    const res = await http.get(`/tags/stores/search`, { params: { query } });
     return { data: res.data, error: null };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
