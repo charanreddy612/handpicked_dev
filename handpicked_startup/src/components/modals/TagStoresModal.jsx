@@ -23,7 +23,7 @@ export default function TagStoresModal({ tagId, onClose }) {
       // UPDATED: Use { data, error } structure
       const { data, error } = await getStoresByTag(tagId);
       if (error) {
-        console.error("Error fetching linked stores:", error.message);
+        console.error("Error fetching linked merchants:", error.message);
         setLinkedStores([]);
       } else if (Array.isArray(data)) {
         setLinkedStores(data);
@@ -43,7 +43,7 @@ export default function TagStoresModal({ tagId, onClose }) {
       // UPDATED: Use { data, error } structure
       const { data, error } = await searchStores(searchTerm);
       if (error) {
-        console.error("Error searching stores:", error.message);
+        console.error("Error searching merchants:", error.message);
         setSearchResults([]);
       } else if (Array.isArray(data)) {
         setSearchResults(data);
@@ -64,7 +64,7 @@ export default function TagStoresModal({ tagId, onClose }) {
     // UPDATED: Use { error }
     const { error } = await addStoreToTag(tagId, selectedStore.id);
     if (error) {
-      console.error("Error adding store to tag:", error.message);
+      console.error("Error adding merchant to tag:", error.message);
     } else {
       setLinkedStores((prev) => [...prev, selectedStore]);
       setSelectedStore(null);
@@ -78,7 +78,7 @@ export default function TagStoresModal({ tagId, onClose }) {
     // UPDATED: Use { error }
     const { error } = await removeStoreFromTag(tagId, storeId);
     if (error) {
-      console.error("Error removing store:", error.message);
+      console.error("Error removing merchant:", error.message);
     } else {
       setLinkedStores((prev) => prev.filter((s) => s.id !== storeId));
     }
@@ -88,13 +88,13 @@ export default function TagStoresModal({ tagId, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative">
-        <h2 className="text-xl font-semibold mb-4">Manage Stores for Tag</h2>
+        <h2 className="text-xl font-semibold mb-4">Manage Marchants for Tag</h2>
 
         {/* Search */}
         <div className="relative mb-4" ref={searchRef}>
           <input
             type="text"
-            placeholder="Search for store..."
+            placeholder="Search for merchant..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -125,18 +125,18 @@ export default function TagStoresModal({ tagId, onClose }) {
             disabled={!selectedStore || adding}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
           >
-            {adding ? "Adding..." : "Add Store"}
+            {adding ? "Adding..." : "Add Merchant"}
           </button>
         </div>
 
         {/* Linked stores list */}
         <div>
-          <h3 className="text-lg font-medium mb-2">Linked Stores</h3>
+          <h3 className="text-lg font-medium mb-2">Linked Merchants</h3>
           {loading ? (
-            <p className="text-sm text-gray-500">Loading stores...</p>
+            <p className="text-sm text-gray-500">Loading Merchants...</p>
           ) : linkedStores.length === 0 ? (
             <p className="text-sm text-gray-500">
-              No stores linked to this tag.
+              No Merchant linked to this tag.
             </p>
           ) : (
             <ul className="divide-y">
