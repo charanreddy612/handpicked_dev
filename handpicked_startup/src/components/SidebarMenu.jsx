@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import * as FiIcons from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
-// import pkg from 'react-router-dom';
-// const {useLocation, Link} = pkg;
 
 export default function SidebarMenu({ isCollapsed }) {
   const [menuItems, setMenuItems] = useState([]);
   const [openIndex, setOpenIndex] = useState(null);
-
   const location = useLocation();
 
   useEffect(() => {
@@ -31,9 +28,14 @@ export default function SidebarMenu({ isCollapsed }) {
     return IconComponent ? <IconComponent /> : null;
   };
 
-  // Use React Router location to check active
+  const cleanPath = (path) => {
+    if (!path) return "";
+    return path.startsWith("/") ? path.slice(1) : path;
+  };
+
   const isActive = (path) => {
-    return location.pathname === path;
+    // Compare with /dashboard/cleanPath value
+    return location.pathname === `/dashboard/${cleanPath(path)}`;
   };
 
   return (
@@ -42,7 +44,6 @@ export default function SidebarMenu({ isCollapsed }) {
         {menuItems.map((item, index) => {
           const hasChildren = item.children && item.children.length > 0;
 
-          // Parent with children: toggle button, no link
           if (hasChildren) {
             return (
               <li key={item.id || item.title}>
@@ -57,22 +58,30 @@ export default function SidebarMenu({ isCollapsed }) {
                   `}
                 >
                   <span className="text-lg">{getIcon(item.icon)}</span>
-                  {!isCollapsed && <span className="ml-3 font-medium">{item.title}</span>}
+                  {!isCollapsed && (
+                    <span className="ml-3 font-medium">{item.title}</span>
+                  )}
                 </button>
 
                 {openIndex === index && !isCollapsed && (
-                  <ul id={`submenu-${index}`} role="group" className="pl-8 mt-1 space-y-1">
+                  <ul
+                    id={`submenu-${index}`}
+                    role="group"
+                    className="pl-8 mt-1 space-y-1"
+                  >
                     {item.children.map((subItem) => (
                       <li key={subItem.id || subItem.title}>
                         <Link
-                          to={subItem.path}
+                          to={cleanPath(subItem.path)}
                           className={`flex items-center w-full p-2 text-sm rounded-md
                             ${isActive(subItem.path)
                               ? "bg-indigo-300 text-indigo-900"
                               : "text-gray-600 dark:text-gray-300 hover:bg-gray-100"}
                           `}
                         >
-                          <span className="text-base">{getIcon(subItem.icon)}</span>
+                          <span className="text-base">
+                            {getIcon(subItem.icon)}
+                          </span>
                           <span className="ml-2">{subItem.title}</span>
                         </Link>
                       </li>
@@ -83,11 +92,10 @@ export default function SidebarMenu({ isCollapsed }) {
             );
           }
 
-          // Parent without children: direct React Router Link
           return (
             <li key={item.id || item.title}>
               <Link
-                to={item.path}
+                to={cleanPath(item.path)}
                 className={`flex items-center w-full p-2 rounded-md
                   ${isActive(item.path)
                     ? "bg-indigo-200 text-indigo-900"
@@ -95,7 +103,9 @@ export default function SidebarMenu({ isCollapsed }) {
                 `}
               >
                 <span className="text-lg">{getIcon(item.icon)}</span>
-                {!isCollapsed && <span className="ml-3 font-medium">{item.title}</span>}
+                {!isCollapsed && (
+                  <span className="ml-3 font-medium">{item.title}</span>
+                )}
               </Link>
             </li>
           );

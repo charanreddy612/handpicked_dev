@@ -4,29 +4,28 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginForm from "./LoginForm.jsx";
 import DashboardLayout from "./DashboardLayout.jsx";
 import ProtectedRoute from "./ProtectedRoutes.jsx";
+import DashboardSummary from "./DashboardSummary.jsx";
+import TagsPage from "./TagsPage.jsx";
 
 export default function AppRouter() {
   const [isClient, setIsClient] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Ensure client-side rendering before accessing localStorage
     setIsClient(true);
     const token = localStorage.getItem("authToken");
     setIsAuthenticated(Boolean(token));
   }, []);
 
-  if (!isClient) {
-    return null; // Prevents SSR hydration errors
-  }
+  if (!isClient) return null;
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public route */}
+        {/* Public */}
         <Route path="/login" element={<LoginForm />} />
 
-        {/* Protected dashboard routes */}
+        {/* Protected Dashboard */}
         <Route
           path="/dashboard/*"
           element={
@@ -34,9 +33,15 @@ export default function AppRouter() {
               <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          {/* Default inside dashboard */}
+          <Route index element={<Navigate to="summary" replace />} />
+          <Route path="summary" element={<DashboardSummary />} />
+          <Route path="tags" element={<TagsPage />} />
+          {/* More child screens here */}
+        </Route>
 
-        {/* Root redirect based on auth */}
+        {/* Root redirect */}
         <Route
           path="/"
           element={
@@ -48,7 +53,7 @@ export default function AppRouter() {
           }
         />
 
-        {/* 404 Fallback */}
+        {/* 404 fallback */}
         <Route path="*" element={<p>404 Not Found</p>} />
       </Routes>
     </BrowserRouter>

@@ -1,12 +1,13 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from "path";
 
 import authRoutes from './routes/authRoutes.js';
 import merchantRoutes from './routes/merchantsRoutes.js';
 import couponRoutes from './routes/couponsRoutes.js';
 import bannerRoutes from './routes/bannersRoutes.js';
-import tagRoutes from './routes/tagsRoutes.js';
+import tagsRoutes from './routes/tagsRoutes.js';
 import sidebarRoutes from './routes/sidebarRoutes.js';
 
 dotenv.config();
@@ -14,13 +15,17 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve uploads
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/banners', bannerRoutes);
-app.use('/api/tags', tagRoutes);
+app.use('/api/tags', tagsRoutes);
 app.use('/api/sidebar', sidebarRoutes);
 
 app.get('/', (req, res) => {
