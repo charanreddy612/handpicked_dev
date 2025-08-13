@@ -2,17 +2,17 @@
 import { useState, useEffect } from "react";
 import { getTags, updateTagWithImage } from "../../services/tagService"; // UPDATED: New method
 
-export default function EditTagModal({ tagData, onClose, onSave }) {
+export default function EditTagModal({ tag, onClose, onSave }) {
   const [formData, setFormData] = useState({
-    tag_name: tagData?.tag_name || "",
-    slug: tagData?.slug || "",
-    parent_id: tagData?.parent_id || "",
-    active: tagData?.active ?? true,
-    display_order: tagData?.display_order || 0,
-    meta_title: tagData?.meta_title || "",
-    meta_description: tagData?.meta_description || "",
-    meta_keywords: tagData?.meta_keywords || "",
-    image: null, // will hold File if replaced
+    tag_name: tag?.tag_name || "",
+    slug: tag?.slug || "",
+    parent_id: tag?.parent_id || "",
+    active: tag?.active ?? true,
+    display_order: tag?.display_order || 0,
+    meta_title: tag?.meta_title || "",
+    meta_description: tag?.meta_description || "",
+    meta_keywords: tag?.meta_keywords || "",
+    image: tag?.image_url || null,
   });
 
   const [tags, setTags] = useState([]);
@@ -27,12 +27,12 @@ export default function EditTagModal({ tagData, onClose, onSave }) {
         console.error("Error fetching parent tags:", error.message);
         setTags([]);
       } else if (Array.isArray(data)) {
-        setTags(data.filter((t) => t.id !== tagData.id));
+        setTags(data.filter((t) => t.id !== tag.id));
       }
       setLoadingTags(false);
     };
     fetchTagsList();
-  }, [tagData]);
+  }, [tag]);
 
   // Generic form handler for all inputs including checkbox & file
   const handleChange = (e) => {
@@ -53,7 +53,7 @@ export default function EditTagModal({ tagData, onClose, onSave }) {
       payload.append(key, formData[key]);
     });
 
-    const { error } = await updateTagWithImage(tagData.id, payload);
+    const { error } = await updateTagWithImage(tag.id, payload);
     if (error) {
       console.error("Error updating tag:", error.message);
     } else {
@@ -186,9 +186,9 @@ export default function EditTagModal({ tagData, onClose, onSave }) {
               onChange={handleChange}
               className="w-full"
             />
-            {tagData?.image_url && (
+            {tag?.image_url && (
               <p className="text-sm mt-1">
-                Current: <a href={tagData.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{tagData.image_url}</a>
+                Current: <a href={tag.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{tag.image_url}</a>
               </p>
             )}
           </div>
