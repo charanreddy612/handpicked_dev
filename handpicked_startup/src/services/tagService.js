@@ -11,29 +11,33 @@ const http = axios.create({
 // Common error formatter
 function toServiceError(error) {
   const status = error?.response?.status;
+  const payload = error?.response?.data;
   const message =
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    error?.message ||
-    "Request failed";
-  const details = error?.response?.data;
-  return { message, status, details, raw: error };
+payload?.error?.message ||
+payload?.error ||
+payload?.message ||
+error?.message ||
+"Request failed";
+return { message, status, details: payload, raw: error };
 }
 
 // -------- Existing methods (unchanged) --------
 export async function getTags() {
   try {
     const res = await http.get("/");
-    return { data: res.data, error: null };
+    const api = res.data;
+    const list = Array.isArray(api?.data) ? api.data : [];
+    return { data: list, error:api?.error || null };
   } catch (err) {
-    return { data: null, error: toServiceError(err) };
+    return { data: [], error: toServiceError(err) };
   }
 }
 
 export async function createTag(tagData) {
   try {
     const res = await http.post("/", tagData);
-    return { data: res.data, error: null };
+    const api = res.data;
+    return { data: api?.data ?? null, error: api?.error || null };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
   }
@@ -45,7 +49,8 @@ export async function createTagWithImage(formData) {
     const res = await http.post("/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return { data: res.data, error: null };
+    const api = res.data;
+    return { data: api?.data ?? null, error: api?.error || null };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
   }
@@ -54,7 +59,8 @@ export async function createTagWithImage(formData) {
 export async function updateTag(tagId, tagData) {
   try {
     const res = await http.put(`/${tagId}`, tagData);
-    return { data: res.data, error: null };
+    const api = res.data;
+    return { data: api?.data ?? null, error: api?.error || null };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
   }
@@ -66,7 +72,8 @@ export async function updateTagWithImage(tagId, formData) {
     const res = await http.put(`/${tagId}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return { data: res.data, error: null };
+    const api = res.data;
+    return { data: api?.data ?? null, error: api?.error || null };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
   }
@@ -75,7 +82,8 @@ export async function updateTagWithImage(tagId, formData) {
 export async function deleteTag(tagId) {
   try {
     const res = await http.delete(`/${tagId}`);
-    return { data: res.data, error: null };
+    const api = res.data;
+    return { data: api?.data ?? null, error: api?.error || null };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
   }
