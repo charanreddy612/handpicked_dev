@@ -148,7 +148,7 @@ export default function TagsPage() {
       {showAddModal && (
         <AddTagModal
           onClose={() => setShowAddModal(false)}
-          onSuccess={fetchTags}
+          onSave={fetchTags}
         />
       )}
 
@@ -157,7 +157,7 @@ export default function TagsPage() {
         <EditTagModal
           tag={selectedTag}
           onClose={() => setShowEditModal(false)}
-          onSuccess={fetchTags}
+          onSave={fetchTags}
         />
       )}
 
