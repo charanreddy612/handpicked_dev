@@ -51,6 +51,7 @@ export default function AddBlogModal({ onClose, onSave }) {
     if (!form.title) return;
     setSaving(true);
     const fd = new FormData();
+    console.log([...fd.entries()]);
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     if (thumb) fd.append("featured_thumb", thumb);
     if (image) fd.append("featured_image", image);

@@ -35,10 +35,12 @@ export async function getBlog(req, res) {
 
 export async function createBlog(req, res) {
   try {
-    const b = req.body || {};
-    if (!b.title) return res.status(400).json({ data: null, error: { message: "Title is required" } });
+    console.log('BODY:', req.body);
+    console.log('FILES:', req.files); 
+    const body = req.body || {};
+    if (!body.title) return res.status(400).json({ data: null, error: { message: "Title is required" } });
 
-    let slug = b.slug ? slugify(b.slug) : slugify(b.title);
+    let slug = body.slug ? slugify(body.slug) : slugify(body.title);
     slug = await blogRepo.ensureUniqueSlug(slug);
 
     const featured_thumb_url = req.files?.featured_thumb
@@ -50,20 +52,20 @@ export async function createBlog(req, res) {
       : null;
 
     const created = await blogRepo.insert({
-      title: b.title,
+      title: body.title,
       slug,
-      content: b.content || "",
-      meta_title: b.meta_title || "",
-      meta_keywords: b.meta_keywords || "",
-      meta_description: b.meta_description || "",
+      content: body.content || "",
+      meta_title: body.meta_title || "",
+      meta_keywords: body.meta_keywords || "",
+      meta_description: body.meta_description || "",
       featured_thumb_url,
       featured_image_url,
-      is_publish: toBool(b.is_publish),
-      is_featured: toBool(b.is_featured),
-      is_top: toBool(b.is_top),
-      top_category_name: b.top_category_name || null,
-      category_order: b.category_order ? Number(b.category_order) : null,
-      blogs_count: b.blogs_count ? Number(b.blogs_count) : 0,
+      is_publish: toBool(body.is_publish),
+      is_featured: toBool(body.is_featured),
+      is_top: toBool(body.is_top),
+      top_category_name: body.top_category_name || null,
+      category_order: body.category_order ? Number(body.category_order) : null,
+      blogs_count: body.blogs_count ? Number(body.blogs_count) : 0,
     });
 
     return res.json({ data: created, error: null });
