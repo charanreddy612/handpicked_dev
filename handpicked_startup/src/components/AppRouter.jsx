@@ -6,6 +6,7 @@ import DashboardLayout from "./DashboardLayout.jsx";
 import ProtectedRoute from "./ProtectedRoutes.jsx";
 import DashboardSummary from "./DashboardSummary.jsx";
 import TagsPage from "./TagsPage.jsx";
+import BlogsListPage from "./BlogsListPage.jsx";
 
 export default function AppRouter() {
   const [isClient, setIsClient] = useState(false);
@@ -38,7 +39,8 @@ export default function AppRouter() {
           <Route index element={<Navigate to="summary" replace />} />
           <Route path="summary" element={<DashboardSummary />} />
           <Route path="tags" element={<TagsPage />} />
-          {/* More child screens here */}
+          <Route path="blogs" element={<BlogsListPage />} />
+           {/* More child screens here */}
         </Route>
 
         {/* Root redirect */}

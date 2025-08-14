@@ -2,7 +2,10 @@
 import { supabase } from "../dbhelper/dbclient.js";
 import { toSlug } from "../utils/slug.js";
 import { normalizeTagPayload, validateTagPayload } from "../utils/validation.js";
-import { uploadTagImageBuffer, deleteByPublicUrl } from "../services/storageService.js";
+import { uploadImageBuffer, deleteImageByPublicUrl } from "../services/storageService.js";
+
+const BUCKET = "tag-images";
+const FOLDER = "tags";
 
 const toError = (err, msg = "Server error") => ({
   data: null,
@@ -36,36 +39,6 @@ export async function getTag(req, res) {
   if (error || !data) return res.status(404).json(toError(error, "Tag not found"));
   res.json({ data, error: null });
 }
-
-// CREATE tag
-// export async function createTag(req, res) {
-//   try {
-//     const fields = normalizeTagPayload(req.body);
-
-//     // Auto-generate slug
-//     fields.slug = fields.slug ? toSlug(fields.slug) : toSlug(fields.tag_name);
-
-//     // Validate
-//     const v = validateTagPayload(fields, { requireName: true, requireSlug: true });
-//     if (!v.ok) return res.status(400).json({ data: null, error: { message: "Validation failed", details: v.errors } });
-
-//     // Upload image if provided
-//     let image_url = null;
-//     if (req.file) {
-//       const { url, error } = await uploadTagImageBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
-//       if (error) return res.status(500).json(toError(error, "Image upload failed"));
-//       image_url = url;
-//     }
-
-//     const insertData = { ...fields, image_url };
-//     const { data, error } = await supabase.from("tags").insert([insertData]).select().single();
-//     if (error) return res.status(500).json(toError(error, "Error creating tag"));
-
-//     res.status(201).json({ data, error: null });
-//   } catch (err) {
-//     res.status(500).json(toError(err));
-//   }
-// }
 //CREATE tag
 export async function createTag(req, res) {
   try {
@@ -88,11 +61,13 @@ export async function createTag(req, res) {
     // Upload image if provided
     let image_url = null;
     if (req.file) {
-      const { url, error } = await uploadTagImageBuffer(
+      const { url, error } = await uploadImageBuffer(
+        BUCKET, FOLDER,
         req.file.buffer,
         req.file.originalname,
         req.file.mimetype
       );
+      
       if (error) {
         return res.status(500).json(toError(error, "Image upload failed"));
       }
@@ -125,49 +100,6 @@ export async function createTag(req, res) {
     return res.status(500).json(toError(err));
   }
 }
-
-// UPDATE tag
-// export async function updateTag(req, res) {
-//   try {
-//     const { id } = req.params;
-//     const { data: current } = await supabase.from("tags").select("*").eq("id", id).single();
-//     if (!current) return res.status(404).json(toError({}, "Tag not found"));
-
-//     const fields = normalizeTagPayload(req.body);
-
-//     // Prevent parent = self
-//     if (fields.parent_id && Number(fields.parent_id) === Number(id)) {
-//       return res.status(400).json({ data: null, error: { message: "parent_id cannot equal tag id" } });
-//     }
-
-//     // Auto-slug
-//     fields.slug = fields.slug ? toSlug(fields.slug) : toSlug(fields.tag_name || current.tag_name);
-
-//     // Validate
-//     const v = validateTagPayload(fields, { requireName: false, requireSlug: true });
-//     if (!v.ok) return res.status(400).json({ data: null, error: { message: "Validation failed", details: v.errors } });
-
-//     // Image handling
-//     let image_url = current.image_url;
-//     if (req.file) {
-//       const { url, error } = await uploadTagImageBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
-//       if (error) return res.status(500).json(toError(error, "Image upload failed"));
-//       await deleteByPublicUrl(image_url);
-//       image_url = url;
-//     } else if (fields.existing_image_url === null) {
-//       await deleteByPublicUrl(image_url);
-//       image_url = null;
-//     }
-
-//     const updateData = { ...current, ...fields, image_url, updated_at: new Date().toISOString() };
-//     const { data, error } = await supabase.from("tags").update(updateData).eq("id", id).select().single();
-//     if (error) return res.status(500).json(toError(error, "Error updating tag"));
-
-//     res.json({ data, error: null });
-//   } catch (err) {
-//     res.status(500).json(toError(err));
-//   }
-// }
 
 //UPDATE tag
 export async function updateTag(req, res) {
@@ -204,16 +136,17 @@ export async function updateTag(req, res) {
     // Image handling
     let image_url = current.image_url;
     if (req.file) {
-      const { url, error } = await uploadTagImageBuffer(
+      const { url, error } = await uploadImageBuffer(
+        BUCKET, FOLDER,
         req.file.buffer,
         req.file.originalname,
         req.file.mimetype
       );
       if (error) return res.status(500).json(toError(error, "Image upload failed"));
-      await deleteByPublicUrl(image_url);
+      await deleteImageByPublicUrl(BUCKET, image_url);
       image_url = url;
     } else if (fields.existing_image_url === null) {
-      await deleteByPublicUrl(image_url);
+      await deleteImageByPublicUrl(BUCKET, image_url);
       image_url = null;
     }
 
@@ -245,7 +178,7 @@ export async function updateTag(req, res) {
 export async function deleteTag(req, res) {
   const { id } = req.params;
   const { data: tag } = await supabase.from("tags").select("image_url").eq("id", id).single();
-  if (tag?.image_url) await deleteByPublicUrl(tag.image_url);
+  if (tag?.image_url) await deleteImageByPublicUrl(BUCKET, tag.image_url);
   const { error } = await supabase.from("tags").delete().eq("id", id);
   if (error) return res.status(500).json(toError(error, "Error deleting tag"));
   res.json({ data: { success: true }, error: null });
