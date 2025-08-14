@@ -4,8 +4,12 @@ import { uploadImageBuffer, deleteImageByPublicUrl } from "../services/storageSe
 const BUCKET = "blog-images";
 const FOLDER = "blogs";
 
+// Helpers
+const toError = (err, msg = "Server error") => ({
+  data: null,
+  error: { message: msg, details: err?.message || err },
+});
 const toBool = (v) => v === true || v === "true" || v === 1 || v === "1";
-
 const slugify = (s) =>
   String(s || "")
     .toLowerCase()
@@ -19,41 +23,68 @@ export async function listBlogs(req, res) {
     const rows = await blogRepo.list({ title: title || null });
     return res.json({ data: rows, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: err.message } });
+    return res.status(500).json(toError(err, "Error fetching blogs"));
   }
 }
 
 export async function getBlog(req, res) {
   try {
     const blog = await blogRepo.getById(req.params.id);
-    if (!blog) return res.status(404).json({ data: null, error: { message: "Not found" } });
+    if (!blog) return res.status(404).json(toError({}, "Blog not found"));
     return res.json({ data: blog, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: err.message } });
+    return res.status(500).json(toError(err, "Error fetching blog"));
   }
 }
 
 export async function createBlog(req, res) {
   try {
-    console.log('BODY:', req.body);
-    console.log('FILES:', req.files); 
-    const body = req.body || {};
-    if (!body.title) return res.status(400).json({ data: null, error: { message: "Title is required" } });
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files);
 
-    let slug = body.slug ? slugify(body.slug) : slugify(body.title);
+    const body = req.body || {};
+
+    if (!body.title || !String(body.title).trim()) {
+      return res.status(400).json({ data: null, error: { message: "Title is required" } });
+    }
+
+    // Server-side slug generation
+    let slug = slugify(body.slug || body.title);
     slug = await blogRepo.ensureUniqueSlug(slug);
 
-    const featured_thumb_url = req.files?.featured_thumb
-      ? (await uploadImageBuffer(BUCKET, FOLDER, req.files.featured_thumb.data, req.files.featured_thumb.name, req.files.featured_thumb.mimetype)).url
-      : null;
+    // Upload featured_thumb if present
+    let featured_thumb_url = null;
+    if (req.files?.featured_thumb?.[0]) {
+      const file = req.files.featured_thumb[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET, FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error) return res.status(500).json(toError(error, "Featured thumb upload failed"));
+      featured_thumb_url = url;
+    }
 
-    const featured_image_url = req.files?.featured_image
-      ? (await uploadImageBuffer(BUCKET, FOLDER, req.files.featured_image.data, req.files.featured_image.name, req.files.featured_image.mimetype)).url
-      : null;
+    // Upload featured_image if present
+    let featured_image_url = null;
+    if (req.files?.featured_image?.[0]) {
+      const file = req.files.featured_image[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET, FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error) return res.status(500).json(toError(error, "Featured image upload failed"));
+      featured_image_url = url;
+    }
 
     const created = await blogRepo.insert({
       title: body.title,
       slug,
+      category_id: body.category_id || null,
+      author_id: body.author_id || null,
       content: body.content || "",
       meta_title: body.meta_title || "",
       meta_keywords: body.meta_keywords || "",
@@ -68,68 +99,103 @@ export async function createBlog(req, res) {
       blogs_count: body.blogs_count ? Number(body.blogs_count) : 0,
     });
 
-    return res.json({ data: created, error: null });
+    return res.status(201).json({ data: created, error: null });
   } catch (err) {
     console.error("Create Blog Error:", err);
-    return res.status(500).json({ data: null, error: { message: err.message } });
+    return res.status(500).json(toError(err, "Error creating blog"));
   }
 }
 
 export async function updateBlog(req, res) {
   try {
     const { id } = req.params;
-    const b = req.body || {};
+    const body = req.body || {};
 
     const patch = {
-      title: b.title,
-      content: b.content,
-      meta_title: b.meta_title,
-      meta_keywords: b.meta_keywords,
-      meta_description: b.meta_description,
-      is_publish: b.is_publish !== undefined ? toBool(b.is_publish) : undefined,
-      is_featured: b.is_featured !== undefined ? toBool(b.is_featured) : undefined,
-      is_top: b.is_top !== undefined ? toBool(b.is_top) : undefined,
-      top_category_name: b.top_category_name,
-      category_order: b.category_order !== undefined ? Number(b.category_order) : undefined,
-      blogs_count: b.blogs_count !== undefined ? Number(b.blogs_count) : undefined,
+      title: body.title,
+      category_id: body.category_id || null,
+      author_id: body.author_id || null,
+      content: body.content,
+      meta_title: body.meta_title,
+      meta_keywords: body.meta_keywords,
+      meta_description: body.meta_description,
+      is_publish: body.is_publish !== undefined ? toBool(body.is_publish) : undefined,
+      is_featured: body.is_featured !== undefined ? toBool(body.is_featured) : undefined,
+      is_top: body.is_top !== undefined ? toBool(body.is_top) : undefined,
+      top_category_name: body.top_category_name,
+      category_order: body.category_order !== undefined ? Number(body.category_order) : undefined,
+      blogs_count: body.blogs_count !== undefined ? Number(body.blogs_count) : undefined,
     };
 
-    if (b.slug) {
-      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, slugify(b.slug));
+    // Re-slugify if slug is provided
+    if (body.slug) {
+      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, slugify(body.slug));
+    } else if (body.title) {
+      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, slugify(body.title));
     }
 
-    if (req.files?.featured_thumb) {
-      patch.featured_thumb_url = (await uploadImageBuffer(BUCKET, FOLDER, req.files.featured_thumb.data, req.files.featured_thumb.name, req.files.featured_thumb.mimetype)).url;
+    // Handle updated featured_thumb
+    if (req.files?.featured_thumb?.[0]) {
+      const file = req.files.featured_thumb[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET, FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error) return res.status(500).json(toError(error, "Featured thumb upload failed"));
+      patch.featured_thumb_url = url;
     }
 
-    if (req.files?.featured_image) {
-      patch.featured_image_url = (await uploadImageBuffer(BUCKET, FOLDER, req.files.featured_image.data, req.files.featured_image.name, req.files.featured_image.mimetype)).url;
+    // Handle updated featured_image
+    if (req.files?.featured_image?.[0]) {
+      const file = req.files.featured_image[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET, FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error) return res.status(500).json(toError(error, "Featured image upload failed"));
+      patch.featured_image_url = url;
     }
 
     const updated = await blogRepo.update(id, patch);
     return res.json({ data: updated, error: null });
   } catch (err) {
     console.error("Update Blog Error:", err);
-    return res.status(500).json({ data: null, error: { message: err.message } });
+    return res.status(500).json(toError(err, "Error updating blog"));
   }
 }
 
 export async function updateBlogStatus(req, res) {
   try {
-    const updated = await blogRepo.update(req.params.id, { is_publish: toBool(req.body.is_publish) });
+    const updated = await blogRepo.update(req.params.id, {
+      is_publish: toBool(req.body.is_publish),
+    });
     return res.json({ data: updated, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: err.message } });
+    return res.status(500).json(toError(err, "Error updating blog status"));
   }
 }
 
 export async function deleteBlog(req, res) {
   try {
     const { id } = req.params;
+
+    // Optionally — get current blog to delete images from Supabase
+    const blog = await blogRepo.getById(id);
+    if (blog?.featured_thumb_url) {
+      await deleteImageByPublicUrl(BUCKET, blog.featured_thumb_url);
+    }
+    if (blog?.featured_image_url) {
+      await deleteImageByPublicUrl(BUCKET, blog.featured_image_url);
+    }
+
     await blogRepo.remove(id);
     return res.json({ data: { id: Number(id) }, error: null });
   } catch (err) {
     console.error("Delete Blog Error:", err);
-    return res.status(500).json({ data: null, error: { message: err.message } });
+    return res.status(500).json(toError(err, "Error deleting blog"));
   }
 }
