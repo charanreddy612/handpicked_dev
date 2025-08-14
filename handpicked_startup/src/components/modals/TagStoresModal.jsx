@@ -20,7 +20,6 @@ export default function TagStoresModal({ tagId, onClose }) {
   // Fetch linked stores
   useEffect(() => {
     const fetchLinkedStores = async () => {
-      // UPDATED: Use { data, error } structure
       const { data, error } = await getStoresByTag(tagId);
       if (error) {
         console.error("Error fetching linked merchants:", error.message);
@@ -33,15 +32,15 @@ export default function TagStoresModal({ tagId, onClose }) {
     fetchLinkedStores();
   }, [tagId]);
 
-  // Search stores live
+  // Live search with debounce
   useEffect(() => {
     if (!searchTerm.trim()) {
       setSearchResults([]);
       return;
     }
     const delayDebounce = setTimeout(async () => {
-      // UPDATED: Use { data, error } structure
       const { data, error } = await searchStores(searchTerm);
+      console.log("searchResults:",{data, error});
       if (error) {
         console.error("Error searching merchants:", error.message);
         setSearchResults([]);
@@ -52,16 +51,26 @@ export default function TagStoresModal({ tagId, onClose }) {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
 
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchResults([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleSelectStore = (store) => {
     setSelectedStore(store);
     setSearchTerm(store.name);
-    setSearchResults([]);
+    setSearchResults([]); // hide dropdown immediately
   };
 
   const handleAddStore = async () => {
     if (!selectedStore) return;
     setAdding(true);
-    // UPDATED: Use { error }
     const { error } = await addStoreToTag(tagId, selectedStore.id);
     if (error) {
       console.error("Error adding merchant to tag:", error.message);
@@ -75,7 +84,6 @@ export default function TagStoresModal({ tagId, onClose }) {
 
   const handleRemoveStore = async (storeId) => {
     setRemovingId(storeId);
-    // UPDATED: Use { error }
     const { error } = await removeStoreFromTag(tagId, storeId);
     if (error) {
       console.error("Error removing merchant:", error.message);
@@ -88,7 +96,9 @@ export default function TagStoresModal({ tagId, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative">
-        <h2 className="text-xl font-semibold mb-4">Manage Marchants for Tag</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Manage Merchants for Tag
+        </h2>
 
         {/* Search */}
         <div className="relative mb-4" ref={searchRef}>
@@ -102,6 +112,7 @@ export default function TagStoresModal({ tagId, onClose }) {
             }}
             className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:border-blue-300"
           />
+          {console.log("render searchResults:", searchResults)}
           {searchResults.length > 0 && (
             <ul className="absolute z-10 bg-white border w-full rounded mt-1 max-h-48 overflow-y-auto shadow">
               {searchResults.map((store) => (
@@ -111,6 +122,11 @@ export default function TagStoresModal({ tagId, onClose }) {
                   className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                 >
                   {store.name}
+                  {store.slug && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({store.slug})
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

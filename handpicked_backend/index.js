@@ -10,29 +10,10 @@ import bannerRoutes from './routes/bannersRoutes.js';
 import tagsRoutes from './routes/tagsRoutes.js';
 import sidebarRoutes from './routes/sidebarRoutes.js';
 
-const allowedOrigins = [
-  "https://handpickedstartup.vercel.app",
-  "http://localhost:5173",
-];
-
-const corsOptions = {
-  origin: (origin, cb) => {
-    // allow same-origin/non-browser tools (no Origin header)
-    if (!origin) return cb(null, true);
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    return cb(new Error("Origin not allowed by CORS"));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
 dotenv.config();
 const app = express();
 
 app.use(cors());
-app.options("*", cors(corsOptions));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

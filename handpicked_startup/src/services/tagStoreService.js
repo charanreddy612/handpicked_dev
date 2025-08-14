@@ -3,9 +3,9 @@
 import axios from "axios";
 import { API_BASE_URL } from "src/config/api";
 
-// UPDATED: Centralized axios instance for tag-store operations
+// Centralized axios instance
 const http = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -28,8 +28,10 @@ function toServiceError(error) {
 export async function getStoresByTag(tagId) {
   try {
     const res = await http.get(`/tags/${tagId}/stores`);
-    return { data: res.data, error: null };
-  } catch (err) {
+    return {
+      data: res.data?.data ?? [],
+      error: res.data?.error ?? null
+    };  } catch (err) {
     return { data: null, error: toServiceError(err) };
   }
 }
@@ -42,7 +44,10 @@ export async function getStoresByTag(tagId) {
 export async function searchStores(query) {
   try {
     const res = await http.get(`/tags/stores/search`, { params: { query } });
-    return { data: res.data, error: null };
+    return {
+      data: res.data?.data ?? [],
+      error: res.data?.error ?? null
+    };
   } catch (err) {
     return { data: null, error: toServiceError(err) };
   }

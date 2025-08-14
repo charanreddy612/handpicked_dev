@@ -45,8 +45,8 @@ export default function TagsPage() {
     setShowEditModal(true);
   };
 
-  const handleStoresClick = (tag) => {
-    setSelectedTag(tag);
+  const handleStoresClick = (tagId) => {
+    setSelectedTag(tagId);
     setShowStoresModal(true);
   };
 
@@ -123,7 +123,7 @@ export default function TagsPage() {
                       <FaEdit />
                     </button>
                     <button
-                      onClick={() => handleStoresClick(tag)}
+                      onClick={() => handleStoresClick(tag.id)}
                       className="text-blue-500 hover:text-blue-700"
                       title="View Stores"
                     >
@@ -164,7 +164,7 @@ export default function TagsPage() {
       {/* Tag Stores Modal */}
       {showStoresModal && selectedTag && (
         <TagStoresModal
-          tag={selectedTag}
+          tagId={selectedTag}
           onClose={() => setShowStoresModal(false)}
         />
       )}
