@@ -1,4 +1,5 @@
 import * as blogRepo from "../dbhelper/BlogRepo.js";
+import { toSlug } from "../utils/slug.js";
 import { uploadImageBuffer, deleteImageByPublicUrl } from "../services/storageService.js";
 
 const BUCKET = "blog-images";
@@ -10,12 +11,6 @@ const toError = (err, msg = "Server error") => ({
   error: { message: msg, details: err?.message || err },
 });
 const toBool = (v) => v === true || v === "true" || v === 1 || v === "1";
-const slugify = (s) =>
-  String(s || "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
 
 export async function listBlogs(req, res) {
   try {
@@ -49,7 +44,7 @@ export async function createBlog(req, res) {
     }
 
     // Server-side slug generation
-    let slug = slugify(body.slug || body.title);
+    let slug = toSlug(body.slug || body.title);
     slug = await blogRepo.ensureUniqueSlug(slug);
 
     // Upload featured_thumb if present
@@ -129,9 +124,9 @@ export async function updateBlog(req, res) {
 
     // Re-slugify if slug is provided
     if (body.slug) {
-      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, slugify(body.slug));
+      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, toSlug(body.slug));
     } else if (body.title) {
-      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, slugify(body.title));
+      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, toSlug(body.title));
     }
 
     // Handle updated featured_thumb
