@@ -14,7 +14,23 @@ import blogRoutes from './routes/blogRoutes.js';
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// ✅ CORS config – must be before any routes/middleware that need it
+const allowedOrigins = [
+  'https://handpickedstartup.vercel.app',
+  'http://localhost4321:' // optional for local dev
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true // required for withCredentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
