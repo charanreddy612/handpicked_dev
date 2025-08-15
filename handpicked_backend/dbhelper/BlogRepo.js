@@ -2,12 +2,12 @@ import { supabase } from "../dbhelper/dbclient.js";
 
 // ===== List with optional title filter =====
 export async function list({ title }) {
+  const selectParameter =
+    "id, title, slug, category_id, author_id, is_publish, is_featured, is_top, featured_thumb_url, created_at, category:category_id ( id, name, category_order, is_top )";
   // Select core blog fields + category join fields needed for the list view
   let query = supabase
     .from("blogs")
-    .select(
-      `id, title, slug, category_id, author_id, is_publish, is_featured, is_top, featured_thumb_url, created_at, category:category_id ( id, name, category_order, is_top`
-    )
+    .select(selectParameter)
     .order("created_at", { ascending: false });
 
   if (title) {
@@ -39,11 +39,11 @@ export async function list({ title }) {
 
 // ===== Get by ID =====
 export async function getById(id) {
+  const selectParameter =
+    "id, title, slug, content, meta_title, meta_keywords, meta_description, is_publish, is_featured, is_top, featured_thumb_url, featured_image_url, category_id, author_id, created_at, updated_at, category:category_id ( id, name, category_order, is_top ), authors:author_id ( id, name, email )";
   const { data, error } = await supabase
     .from("blogs")
-    .select(
-      `id, title, slug, content, meta_title, meta_keywords, meta_description, is_publish, is_featured, is_top, featured_thumb_url, featured_image_url, category_id, author_id, created_at, updated_at, category:category_id ( id, name, category_order, is_top ), authors:author_id ( id, name, email )`
-    )
+    .select(selectParameter)
     .eq("id", id)
     .single();
 
