@@ -5,9 +5,9 @@ import {
   deleteBlogCategory,
   updateBlogCategoryStatus,
 } from "../services/blogCategoryService.js";
-import AddBlogCategoryModal from "../modals/AddBlogCategoryModal.jsx";
-import ViewBlogCategoryModal from "../modals/ViewBlogCategoryModal.jsx";
-import EditBlogCategoryModal from "../modals/EditBlogCategoryModal.jsx";
+import AddBlogCategoryModal from "../components/modals/AddBlogCategoryModal.jsx";
+import ViewBlogCategoryModal from "../components/modals/ViewBlogCategoryModal.jsx";
+import EditBlogCategoryModal from "../components/modals/EditBlogCategoryModal.jsx";
 
 export default function BlogCategoriesListPage() {
   const [rows, setRows] = useState([]);
