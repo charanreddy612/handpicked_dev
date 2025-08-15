@@ -2,23 +2,11 @@ import { supabase } from "../dbhelper/dbclient.js";
 
 // ===== List with optional title filter =====
 export async function list({ title }) {
+  // Select core blog fields + category join fields needed for the list view
   let query = supabase
     .from("blogs")
     .select(
-      `
-      id,
-      title,
-      category_id,
-      author_id,
-      top_category_name,
-      category_order,
-      blogs_count,
-      is_publish,
-      is_featured,
-      is_top,
-      featured_thumb_url,
-      created_at
-    `
+      `id, title, slug, category_id, author_id, is_publish, is_featured, is_top, featured_thumb_url, created_at, category:category_id ( id, name, category_order, is_top`
     )
     .order("created_at", { ascending: false });
 
@@ -28,18 +16,63 @@ export async function list({ title }) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data;
+
+  // Normalize shape to expose category info directly
+  const rows = (data || []).map((r) => ({
+    ...r,
+    // For compatibility with your table headings:
+    top_category_name: r.blog_categories?.name ?? null,
+    category_order: r.blog_categories?.category_order ?? null,
+    // Also expose a structured category object
+    category: r.blog_categories
+      ? {
+          id: r.blog_categories.id,
+          name: r.blog_categories.name,
+          category_order: r.blog_categories.category_order,
+          is_top: r.blog_categories.is_top,
+        }
+      : null,
+  }));
+
+  return rows;
 }
 
 // ===== Get by ID =====
 export async function getById(id) {
   const { data, error } = await supabase
     .from("blogs")
-    .select("*")
+    .select(
+      `id, title, slug, content, meta_title, meta_keywords, meta_description, is_publish, is_featured, is_top, featured_thumb_url, featured_image_url, category_id, author_id, created_at, updated_at, category:category_id ( id, name, category_order, is_top ), authors:author_id ( id, name, email )`
+    )
     .eq("id", id)
     .single();
+
   if (error) throw error;
-  return data;
+
+  // Normalize to expose category/author as objects and also simple label fields
+  const result = {
+    ...data,
+    category: data.blog_categories
+      ? {
+          id: data.blog_categories.id,
+          name: data.blog_categories.name,
+          category_order: data.blog_categories.category_order,
+          is_top: data.blog_categories.is_top,
+        }
+      : null,
+    author: data.authors
+      ? {
+          id: data.authors.id,
+          name: data.authors.name,
+          email: data.authors.email,
+        }
+      : null,
+    // Convenience labels
+    category_name: data.blog_categories?.name ?? null,
+    author_name: data.authors?.name ?? null,
+  };
+
+  return result;
 }
 
 // ===== Insert new blog =====

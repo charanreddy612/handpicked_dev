@@ -1,6 +1,10 @@
 // src/pages/blogs/BlogsListPage.jsx
 import React, { useState, useEffect } from "react";
-import { listBlogs, deleteBlog, updateBlogStatus } from "../services/blogService.js";
+import {
+  listBlogs,
+  deleteBlog,
+  updateBlogStatus,
+} from "../services/blogService.js";
 import AddBlogModal from "../components/modals/AddBlogModal.jsx";
 import ViewBlogModal from "../components/modals/ViewBlogModal.jsx";
 import EditBlogModal from "../components/modals/EditBlogModal.jsx";
@@ -117,8 +121,10 @@ export default function BlogsListPage() {
                 <tr key={b.id} className="border-t">
                   <td className="p-3">{b.id}</td>
                   <td className="p-3">{b.title}</td>
-                  <td className="p-3">{b.top_category_name || "—"}</td>
-                  <td className="p-3">{b.category_order ?? "—"}</td>
+                  <td className="p-3">
+                    {b.category?.is_top ? "true" : "false"}
+                  </td>
+                  <td className="p-3">{b.category?.category_order ?? 0}</td>
                   <td className="p-3">{b.blogs_count ?? 0}</td>
                   <td className="p-3 flex gap-2 items-center">
                     {/* Status toggle */}

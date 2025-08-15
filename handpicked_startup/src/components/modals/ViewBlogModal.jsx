@@ -29,10 +29,10 @@ export default function ViewBlogModal({ blogId, onClose }) {
           Slug: {blog.slug}
         </p>
         <p className="text-sm text-gray-500 mb-2">
-          Category: {blog.category_name}
+          Category: {blog.category?.name ?? blog.category_name ?? "—"}
         </p>
         <p className="text-sm text-gray-500 mb-2">
-          Author: {blog.author_name}
+          Author: {blog.author?.name ?? blog.author_name ?? "—"}
         </p>
 
         <div className="my-4 prose max-w-none" dangerouslySetInnerHTML={{ __html: blog.content }} />
