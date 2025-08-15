@@ -11,6 +11,7 @@ import tagsRoutes from './routes/tagsRoutes.js';
 import sidebarRoutes from './routes/sidebarRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import blogCategoryRoutes from './routes/blogCategoryRoutes.js';
+import authorRoutes from './routes/authorRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/tags', tagsRoutes);
 app.use('/api/sidebar', sidebarRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/blog-categories', blogCategoryRoutes);
+app.use('/api/authors', authorRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Handpicked Backend API' });

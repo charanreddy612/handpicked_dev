@@ -21,13 +21,28 @@ export default function AddBlogModal({ onClose, onSave }) {
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [loadingAux, setLoadingAux] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      const { categories, authors } = await fetchBlogAux();
-      setCategories(categories);
-      setAuthors(authors);
+      try {
+        const aux = await fetchBlogAux();
+        if (!mounted) return;
+        setCategories(Array.isArray(aux?.categories) ? aux.categories : []);
+        setAuthors(Array.isArray(aux?.authors) ? aux.authors : []);
+      } catch (e) {
+        setCategories([]);
+        setAuthors([]);
+        // Optional: toast or console
+        console.error("Failed to load blog aux:", e?.message || e);
+      } finally {
+        if (mounted) setLoadingAux(false);
+      }
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleChange = (e) => {
@@ -36,30 +51,50 @@ export default function AddBlogModal({ onClose, onSave }) {
   };
 
   const handleTitleBlur = () => {
-    if (!form.slug && form.title) {
-      const slug = form.title
+    const t = String(form?.title || "").trim();
+    if (!form.slug && t) {
+      const slug = t
         .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-");
+        .replace(/['"]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       setForm((f) => ({ ...f, slug }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title) return;
+    if (!form.title || !form.slug) return;
     setSaving(true);
     const fd = new FormData();
-    console.log([...fd.entries()]);
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+
+    // Required/base fields
+    fd.append("title", form.title);
+    fd.append("slug", form.slug);
+
+    // Optional text
+    fd.append("content", form.content || "");
+    fd.append("meta_title", form.meta_title || "");
+    fd.append("meta_keywords", form.meta_keywords || "");
+    fd.append("meta_description", form.meta_description || "");
+
+    // Booleans as strings (server parses them)
+    fd.append("is_publish", String(!!form.is_publish));
+    fd.append("is_featured", String(!!form.is_featured));
+    fd.append("is_top", String(!!form.is_top));
+
+    // IDs (append only if selected; avoid empty strings)
+    if (form.category_id) fd.append("category_id", String(form.category_id));
+    if (form.author_id) fd.append("author_id", String(form.author_id));
+
+    // Files
     if (thumb) fd.append("featured_thumb", thumb);
     if (image) fd.append("featured_image", image);
 
     const { error } = await createBlog(fd);
     setSaving(false);
     if (!error) {
-      if (onSave) onSave();
+      onSave?.();
       onClose();
     } else {
       console.error("Error creating blog:", error.message);
@@ -95,41 +130,55 @@ export default function AddBlogModal({ onClose, onSave }) {
               />
             </div>
           </div>
+
           {/* Category & Author */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label>Blog Category</label>
-              <select
-                name="category_id"
-                value={form.category_id}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-              >
-                <option value="">Select</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              {loadingAux ? (
+                <div className="text-sm text-gray-500">Loading categories…</div>
+              ) : (
+                <select
+                  name="category_id"
+                  value={form.category_id}
+                  onChange={handleChange}
+                  className="w-full border px-3 py-2 rounded"
+                >
+                  <option value="">Select</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
+
             <div>
               <label>Blog Author</label>
-              <select
-                name="author_id"
-                value={form.author_id}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-              >
-                <option value="">Select</option>
-                {authors.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+              {loadingAux ? (
+                <div className="text-sm text-gray-500">Loading authors…</div>
+              ) : (
+                <select
+                  name="author_id"
+                  value={form.author_id}
+                  onChange={handleChange}
+                  className="w-full border px-3 py-2 rounded"
+                >
+                  <option value="">Select</option>
+                  {authors.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name ||
+                        a.full_name ||
+                        a.display_name ||
+                        `Author #${a.id}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
+
           {/* Content */}
           <div>
             <label>Content</label>
@@ -141,7 +190,8 @@ export default function AddBlogModal({ onClose, onSave }) {
               className="w-full border px-3 py-2 rounded"
             />
           </div>
-          {/* Meta fields */}
+
+          {/* Meta */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label>Meta Title</label>
@@ -171,7 +221,8 @@ export default function AddBlogModal({ onClose, onSave }) {
               />
             </div>
           </div>
-          {/* File uploads */}
+
+          {/* Files */}
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label>Featured Thumb</label>
@@ -190,6 +241,7 @@ export default function AddBlogModal({ onClose, onSave }) {
               />
             </div>
           </div>
+
           {/* Toggles */}
           <div className="flex gap-6">
             <label className="flex gap-2 items-center">
@@ -220,9 +272,14 @@ export default function AddBlogModal({ onClose, onSave }) {
               Top
             </label>
           </div>
+
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="border px-4 py-2 rounded">
+            <button
+              type="button"
+              onClick={onClose}
+              className="border px-4 py-2 rounded"
+            >
               Cancel
             </button>
             <button

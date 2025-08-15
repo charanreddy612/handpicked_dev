@@ -9,57 +9,115 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // overall modal loading
+  const [loadingAux, setLoadingAux] = useState(true); // auxiliary lists loading
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      const { categories, authors } = await fetchBlogAux();
-      setCategories(categories);
-      setAuthors(authors);
+      try {
+        // Load auxiliary lists (categories, authors)
+        const aux = await fetchBlogAux();
+        if (!mounted) return;
+        setCategories(Array.isArray(aux?.categories) ? aux.categories : []);
+        setAuthors(Array.isArray(aux?.authors) ? aux.authors : []);
+        setLoadingAux(false);
+        // Load blog
+        const blog = await getBlog(blogId);
+        if (!mounted) return;
 
-      const blog = await getBlog(blogId);
-      setForm(blog);
-      setLoading(false);
+        // Ensure controlled fields are present
+        setForm({
+          id: blog?.id,
+          title: blog?.title || "",
+          slug: blog?.slug || "",
+          category_id: blog?.category_id || "",
+          author_id: blog?.author_id || "",
+          content: blog?.content || "",
+          meta_title: blog?.meta_title || "",
+          meta_keywords: blog?.meta_keywords || "",
+          meta_description: blog?.meta_description || "",
+          is_publish: !!blog?.is_publish,
+          is_featured: !!blog?.is_featured,
+          is_top: !!blog?.is_top,
+        });
+      } catch (e) {
+        console.error("Failed to load blog or aux:", e?.message || e);
+        setForm({
+          title: "",
+          slug: "",
+          category_id: "",
+          author_id: "",
+          content: "",
+          meta_title: "",
+          meta_keywords: "",
+          meta_description: "",
+          is_publish: false,
+          is_featured: false,
+          is_top: false,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [blogId]);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleTitleBlur = () => {
-    if (!form.slug && form.title) {
-      const slug = form.title
+    const t = String(form?.title || "").trim();
+    if (!form.slug && t) {
+      const slug = t
         .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-");
+        .replace(/['"]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       setForm((f) => ({ ...f, slug }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title) return;
+    if (!form?.title || !form?.slug) return;
     setSaving(true);
-
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v ?? ""));
+    // Only append fields that the backend expects to update.
+    fd.append("title", form.title);
+    fd.append("slug", form.slug);
+    fd.append("content", form.content || "");
+    fd.append("meta_title", form.meta_title || "");
+    fd.append("meta_keywords", form.meta_keywords || "");
+    fd.append("meta_description", form.meta_description || "");
+
+    // Booleans as strings so backend parser can coerce
+    fd.append("is_publish", String(!!form.is_publish));
+    fd.append("is_featured", String(!!form.is_featured));
+    fd.append("is_top", String(!!form.is_top));
+
+    // IDs only if selected (avoid sending empty strings)
+    if (form.category_id) fd.append("category_id", String(form.category_id));
+    if (form.author_id) fd.append("author_id", String(form.author_id));
+
+    // Files (optional)
     if (thumb) fd.append("featured_thumb", thumb);
     if (image) fd.append("featured_image", image);
 
     const { error } = await updateBlog(blogId, fd);
     setSaving(false);
     if (!error) {
-      if (onSave) onSave();
+      onSave?.();
       onClose();
     } else {
       console.error("Error updating blog:", error.message);
     }
   };
 
-  if (loading) {
+  if (loading || !form) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white">
         Loading blog...
@@ -78,7 +136,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <label>Title</label>
               <input
                 name="title"
-                value={form.title || ""}
+                value={form.title}
                 onChange={handleChange}
                 onBlur={handleTitleBlur}
                 className="w-full border px-3 py-2 rounded"
@@ -89,7 +147,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <label>Slug</label>
               <input
                 name="slug"
-                value={form.slug || ""}
+                value={form.slug}
                 onChange={handleChange}
                 className="w-full border px-3 py-2 rounded"
                 required
@@ -101,35 +159,46 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label>Blog Category</label>
-              <select
-                name="category_id"
-                value={form.category_id || ""}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-              >
-                <option value="">Select</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              {loadingAux ? (
+                <div className="text-sm text-gray-500">Loading categories…</div>
+              ) : (
+                <select
+                  name="category_id"
+                  value={form.category_id}
+                  onChange={handleChange}
+                  className="w-full border px-3 py-2 rounded"
+                >
+                  <option value="">Select</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label>Blog Author</label>
-              <select
-                name="author_id"
-                value={form.author_id || ""}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded"
-              >
-                <option value="">Select</option>
-                {authors.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+              {loadingAux ? (
+                <div className="text-sm text-gray-500">Loading authors…</div>
+              ) : (
+                <select
+                  name="author_id"
+                  value={form.author_id}
+                  onChange={handleChange}
+                  className="w-full border px-3 py-2 rounded"
+                >
+                  <option value="">Select</option>
+                  {authors.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name ||
+                        a.full_name ||
+                        a.display_name ||
+                        `Author #${a.id}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 
@@ -138,7 +207,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
             <label>Content</label>
             <textarea
               name="content"
-              value={form.content || ""}
+              value={form.content}
               onChange={handleChange}
               rows={6}
               className="w-full border px-3 py-2 rounded"
@@ -151,7 +220,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <label>Meta Title</label>
               <input
                 name="meta_title"
-                value={form.meta_title || ""}
+                value={form.meta_title}
                 onChange={handleChange}
                 className="w-full border px-3 py-2 rounded"
               />
@@ -160,7 +229,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <label>Meta Keywords</label>
               <input
                 name="meta_keywords"
-                value={form.meta_keywords || ""}
+                value={form.meta_keywords}
                 onChange={handleChange}
                 className="w-full border px-3 py-2 rounded"
               />
@@ -169,7 +238,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <label>Meta Description</label>
               <input
                 name="meta_description"
-                value={form.meta_description || ""}
+                value={form.meta_description}
                 onChange={handleChange}
                 className="w-full border px-3 py-2 rounded"
               />
@@ -202,7 +271,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <input
                 type="checkbox"
                 name="is_publish"
-                checked={form.is_publish || false}
+                checked={!!form.is_publish}
                 onChange={handleChange}
               />
               Publish
@@ -211,7 +280,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <input
                 type="checkbox"
                 name="is_featured"
-                checked={form.is_featured || false}
+                checked={!!form.is_featured}
                 onChange={handleChange}
               />
               Featured
@@ -220,7 +289,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               <input
                 type="checkbox"
                 name="is_top"
-                checked={form.is_top || false}
+                checked={!!form.is_top}
                 onChange={handleChange}
               />
               Top
@@ -229,7 +298,11 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="border px-4 py-2 rounded">
+            <button
+              type="button"
+              onClick={onClose}
+              className="border px-4 py-2 rounded"
+            >
               Cancel
             </button>
             <button

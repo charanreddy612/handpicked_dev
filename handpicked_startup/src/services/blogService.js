@@ -4,7 +4,7 @@ import { API_BASE_URL } from "../config/api";
 
 const http = axios.create({
   baseURL: `${API_BASE_URL}/api`, // matches your other services
-  withCredentials: true
+  withCredentials: true,
 });
 
 export async function listBlogs(params = {}) {
@@ -42,11 +42,30 @@ export async function fetchBlogAux() {
       http.get("/blog-categories"),
       http.get("/authors"),
     ]);
-    return {
-      categories: catsRes.data?.data ?? [],
-      authors: authsRes.data?.data ?? [],
-    };
+    const rawCategories = Array.isArray(catsRes.data?.data)
+      ? catsRes.data.data
+      : [];
+    const rawAuthors = Array.isArray(authsRes.data?.data)
+      ? authsRes.data.data
+      : [];
+
+    // Normalize to ensure predictable fields for the selects
+    const categories = rawCategories.map((c) => ({
+      id: c.id,
+      name: c.name ?? c.category_name ?? `Category #${c.id}`,
+    }));
+
+    const authors = rawAuthors.map((a) => ({
+      id: a.id,
+      name: a.name ?? a.full_name ?? a.display_name ?? `Author #${a.id}`,
+      // Keep originals if UI wants to display differently later
+      full_name: a.full_name,
+      display_name: a.display_name,
+    }));
+
+    return { categories, authors };
   } catch (err) {
+    console.error("fetchBlogAux failed:", err?.message || err);
     return { categories: [], authors: [] };
   }
 }

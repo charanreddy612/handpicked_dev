@@ -8,6 +8,7 @@ import DashboardSummary from "./DashboardSummary.jsx";
 import TagsPage from "./TagsPage.jsx";
 import BlogsListPage from "./BlogsListPage.jsx";
 import BlogCategoriesListPage from "./BlogCategoryListPage.jsx";
+import AuthorsListPage from "./AuthorsListPage.jsx";
 
 export default function AppRouter() {
   const [isClient, setIsClient] = useState(false);
@@ -42,6 +43,7 @@ export default function AppRouter() {
           <Route path="tags" element={<TagsPage />} />
           <Route path="blogs" element={<BlogsListPage />} />
           <Route path="blog-categories" element={<BlogCategoriesListPage />} />
+          <Route path="authors" element={<AuthorsListPage />} />
            {/* More child screens here */}
         </Route>
 
