@@ -4,7 +4,7 @@ import {
   listBlogCategories,
   deleteBlogCategory,
   updateBlogCategoryStatus,
-} from "../../services/blogCategoryService.js";
+} from "../services/blogCategoryService.js";
 import AddBlogCategoryModal from "../modals/AddBlogCategoryModal.jsx";
 import ViewBlogCategoryModal from "../modals/ViewBlogCategoryModal.jsx";
 import EditBlogCategoryModal from "../modals/EditBlogCategoryModal.jsx";
