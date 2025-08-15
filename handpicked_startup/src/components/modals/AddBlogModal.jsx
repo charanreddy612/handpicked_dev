@@ -6,8 +6,8 @@ export default function AddBlogModal({ onClose, onSave }) {
   const [form, setForm] = useState({
     title: "",
     slug: "",
-    category_id: NULL,
-    author_id: NULL,
+    category_id: "",
+    author_id: "",
     content: "",
     meta_title: "",
     meta_keywords: "",
