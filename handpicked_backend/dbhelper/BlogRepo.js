@@ -8,6 +8,8 @@ export async function list({ title }) {
       `
       id,
       title,
+      category_id,
+      author_id,
       top_category_name,
       category_order,
       blogs_count,
