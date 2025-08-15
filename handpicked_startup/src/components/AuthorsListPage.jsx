@@ -3,10 +3,10 @@ import {
   listAuthors,
   deleteAuthor,
   updateAuthorStatus,
-} from "../../services/authorService.js";
-import AddAuthorModal from "../../components/authors/AddAuthorModal";
-import EditAuthorModal from "../../components/authors/EditAuthorModal";
-import ViewAuthorModal from "../../components/authors/ViewAuthorModal";
+} from "../services/authorService.js";
+import AddAuthorModal from "../components/authors/AddAuthorModal";
+import EditAuthorModal from "../components/authors/EditAuthorModal";
+import ViewAuthorModal from "../components/authors/ViewAuthorModal";
 
 export default function AuthorsListPage() {
   const [rows, setRows] = useState([]);
