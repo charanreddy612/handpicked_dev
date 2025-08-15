@@ -81,7 +81,7 @@ export async function updateBlogStatus(id, is_publish) {
 
 export async function updateBlog(id, formData) {
   try {
-    const res = await http.patch(`/blogs/${id}`, formData, {
+    const res = await http.put(`/blogs/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return { data: res.data?.data ?? null, error: res.data?.error ?? null };
