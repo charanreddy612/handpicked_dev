@@ -21,15 +21,15 @@ export async function list({ title }) {
   const rows = (data || []).map((r) => ({
     ...r,
     // For compatibility with your table headings:
-    top_category_name: r.blog_categories?.name ?? null,
-    category_order: r.blog_categories?.category_order ?? null,
+    top_category_name: r.category?.name ?? null,
+    category_order: r.category?.category_order ?? null,
     // Also expose a structured category object
-    category: r.blog_categories
+    category: r.category
       ? {
-          id: r.blog_categories.id,
-          name: r.blog_categories.name,
-          category_order: r.blog_categories.category_order,
-          is_top: r.blog_categories.is_top,
+          id: r.category.id,
+          name: r.category.name,
+          category_order: r.category.category_order,
+          is_top: r.category.is_top,
         }
       : null,
   }));
@@ -40,7 +40,7 @@ export async function list({ title }) {
 // ===== Get by ID =====
 export async function getById(id) {
   const selectParameter =
-    "id, title, slug, content, meta_title, meta_keywords, meta_description, is_publish, is_featured, is_top, featured_thumb_url, featured_image_url, category_id, author_id, created_at, updated_at, category:category_id ( id, name, category_order, is_top ), authors:author_id ( id, name, email )";
+    "id, title, slug, content, meta_title, meta_keywords, meta_description, is_publish, is_featured, is_top, featured_thumb_url, featured_image_url, category_id, author_id, created_at, updated_at, category:category_id ( id, name, category_order, is_top ), author:author_id ( id, name, email )";
   const { data, error } = await supabase
     .from("blogs")
     .select(selectParameter)
@@ -52,24 +52,24 @@ export async function getById(id) {
   // Normalize to expose category/author as objects and also simple label fields
   const result = {
     ...data,
-    category: data.blog_categories
+    category: data.category
       ? {
-          id: data.blog_categories.id,
-          name: data.blog_categories.name,
-          category_order: data.blog_categories.category_order,
-          is_top: data.blog_categories.is_top,
+          id: data.category.id,
+          name: data.category.name,
+          category_order: data.category.category_order,
+          is_top: data.category.is_top,
         }
       : null,
-    author: data.authors
+    author: data.author
       ? {
-          id: data.authors.id,
-          name: data.authors.name,
-          email: data.authors.email,
+          id: data.author.id,
+          name: data.author.name,
+          email: data.author.email,
         }
       : null,
     // Convenience labels
-    category_name: data.blog_categories?.name ?? null,
-    author_name: data.authors?.name ?? null,
+    category_name: data.category?.name ?? null,
+    author_name: data.author?.name ?? null,
   };
 
   return result;
