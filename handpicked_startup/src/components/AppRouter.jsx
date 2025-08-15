@@ -7,6 +7,7 @@ import ProtectedRoute from "./ProtectedRoutes.jsx";
 import DashboardSummary from "./DashboardSummary.jsx";
 import TagsPage from "./TagsPage.jsx";
 import BlogsListPage from "./BlogsListPage.jsx";
+import BlogCategoriesListPage from "./BlogCategoryListPage.jsx";
 
 export default function AppRouter() {
   const [isClient, setIsClient] = useState(false);
@@ -40,6 +41,7 @@ export default function AppRouter() {
           <Route path="summary" element={<DashboardSummary />} />
           <Route path="tags" element={<TagsPage />} />
           <Route path="blogs" element={<BlogsListPage />} />
+          <Route path="blog-categories" element={<BlogCategoriesListPage />} />
            {/* More child screens here */}
         </Route>
 
