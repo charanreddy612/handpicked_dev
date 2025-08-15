@@ -14,8 +14,8 @@ const toBool = (v) => v === true || v === "true" || v === 1 || v === "1";
 
 export async function listBlogs(req, res) {
   try {
-    const { title } = req.query.title;
-    const rows = await blogRepo.list({ title: title || null });
+    const title = req.query?.title || null;
+    const rows = await blogRepo.list({ title});
     return res.json({ data: rows, error: null });
   } catch (err) {
     return res.status(500).json(toError(err, "Error fetching blogs"));
