@@ -40,6 +40,8 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           is_publish: !!blog?.is_publish,
           is_featured: !!blog?.is_featured,
           is_top: !!blog?.is_top,
+          featured_thumb_url: blog?.featured_thumb_url || "",
+          featured_image_url: blog?.featured_image_url || "",
         });
       } catch (e) {
         console.error("Failed to load blog or aux:", e?.message || e);
@@ -247,6 +249,69 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
 
           {/* File uploads */}
           <div className="grid grid-cols-2 gap-6">
+            {" "}
+            <div>
+              {" "}
+              <label className="block mb-1">
+                Featured Thumb (optional)
+              </label>{" "}
+              {form.featured_thumb_url ? (
+                <img
+                  src={form.featured_thumb_url}
+                  alt="Featured thumb"
+                  className="w-32 h-32 object-cover border rounded mb-2"
+                />
+              ) : (
+                <div className="w-32 h-32 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
+                  {" "}
+                  No thumbnail{" "}
+                </div>
+              )}{" "}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] || null;
+                  setThumb(f);
+                  if (f) {
+                    const url = URL.createObjectURL(f);
+                    setForm((prev) => ({ ...prev, featured_thumb_url: url }));
+                  }
+                }}
+              />{" "}
+            </div>{" "}
+            <div>
+              {" "}
+              <label className="block mb-1">
+                Featured Image (optional)
+              </label>{" "}
+              {form.featured_image_url ? (
+                <img
+                  src={form.featured_image_url}
+                  alt="Featured image"
+                  className="w-48 h-32 object-cover border rounded mb-2"
+                />
+              ) : (
+                <div className="w-48 h-32 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
+                  {" "}
+                  No image{" "}
+                </div>
+              )}{" "}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] || null;
+                  setImage(f);
+                  if (f) {
+                    const url = URL.createObjectURL(f);
+                    setForm((prev) => ({ ...prev, featured_image_url: url }));
+                  }
+                }}
+              />{" "}
+            </div>{" "}
+          </div>
+          {/* <div className="grid grid-cols-2 gap-6">
             <div>
               <label>Featured Thumb (optional)</label>
               <input
@@ -263,7 +328,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
                 onChange={(e) => setImage(e.target.files?.[0] || null)}
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Toggles */}
           <div className="flex gap-6">

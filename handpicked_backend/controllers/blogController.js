@@ -107,25 +107,26 @@ export async function updateBlog(req, res) {
     const body = req.body || {};
 
     const patch = {
-      title: body.title,
-      category_id: body.category_id || null,
-      author_id: body.author_id || null,
-      content: body.content,
-      meta_title: body.meta_title,
-      meta_keywords: body.meta_keywords,
-      meta_description: body.meta_description,
-      is_publish: body.is_publish !== undefined ? toBool(body.is_publish) : undefined,
-      is_featured: body.is_featured !== undefined ? toBool(body.is_featured) : undefined,
-      is_top: body.is_top !== undefined ? toBool(body.is_top) : undefined,
-      top_category_name: body.top_category_name,
-      category_order: body.category_order !== undefined ? Number(body.category_order) : undefined,
-      blogs_count: body.blogs_count !== undefined ? Number(body.blogs_count) : undefined,
-    };
+        title: body.title ?? undefined,
+        category_id: body.category_id !== undefined ? toNumOrNull(body.category_id) : undefined,
+        author_id: body.author_id !== undefined ? toNumOrNull(body.author_id) : undefined,
+        content: body.content ?? undefined,
+        meta_title: body.meta_title ?? undefined,
+        meta_keywords: body.meta_keywords ?? undefined,
+        meta_description: body.meta_description ?? undefined,
+        is_publish: body.is_publish !== undefined ? toBool(body.is_publish) : undefined,
+        is_featured: body.is_featured !== undefined ? toBool(body.is_featured) : undefined,
+        is_top: body.is_top !== undefined ? toBool(body.is_top) : undefined,
+        top_category_name: body.top_category_name ?? undefined,
+        category_order: body.category_order !== undefined ? Number(body.category_order) : undefined,
+        blogs_count: body.blogs_count !== undefined ? Number(body.blogs_count) : undefined,
+};
 
     // Re-slugify if slug is provided
-    if (body.slug) {
-      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, toSlug(body.slug));
-    } else if (body.title) {
+    if (body.slug !== undefined) {
+      const proposed = toSlug(body.slug || "");
+      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, proposed);
+      } else if (body.title !== undefined && body.title) {
       patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, toSlug(body.title));
     }
 
