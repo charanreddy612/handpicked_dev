@@ -4,7 +4,6 @@ import cors from 'cors';
 import path from "path";
 
 import authRoutes from './routes/authRoutes.js';
-import merchantRoutes from './routes/merchantsRoutes.js';
 import couponRoutes from './routes/couponsRoutes.js';
 import bannerRoutes from './routes/bannersRoutes.js';
 import tagsRoutes from './routes/tagsRoutes.js';
