@@ -33,10 +33,13 @@ export default function MerchantsListPage() {
     (async () => {
       setLoading(true);
       try {
-        // const { data, total: t } = await listMerchants({ name: filters.name, page, limit });
-        // Mock until service wired:
-        const t = 0;
-        const data = [];
+        const { data, total: t } = await listMerchants({
+          name: filters.name,
+          page,
+          limit,
+        });
+        setRows(Array.isArray(data) ? data : []);
+        setTotal(Number(t || 0));
         if (!mounted) return;
         setRows(Array.isArray(data) ? data : []);
         setTotal(Number(t || 0));
@@ -75,7 +78,7 @@ export default function MerchantsListPage() {
 
   const handleToggleStatus = async (id) => {
     try {
-      // await toggleMerchantStatus(id);
+      await toggleMerchantStatus(id);
       onAfterMutate();
     } catch (e) {
       console.error("Toggle status failed:", e?.message || e);
@@ -85,7 +88,7 @@ export default function MerchantsListPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this merchant?")) return;
     try {
-      // await removeMerchant(id);
+      await removeMerchant(id);
       onAfterMutate();
     } catch (e) {
       console.error("Delete failed:", e?.message || e);

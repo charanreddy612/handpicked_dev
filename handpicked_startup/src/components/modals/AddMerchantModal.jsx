@@ -41,6 +41,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
   };
 
   const handleSubmit = async (e) => {
+    if (saving) return; 
     e.preventDefault();
     if (!form.name || !form.slug) return;
     setSaving(true);
@@ -64,8 +65,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
     if (sideBanner) fd.append("side_banner", sideBanner);
 
     try {
-      // const { error } = await addMerchant(fd);
-      const error = null; // remove after wiring service
+      const { error } = await addMerchant(fd);
       if (error) throw new Error(error.message || "Create failed");
       onSave?.();
       onClose?.();
@@ -252,12 +252,16 @@ export default function AddMerchantModal({ onClose, onSave }) {
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <button type="button" className="border px-4 py-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="border px-4 py-2 rounded"
+              onClick={onClose}
+            >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving} aria-busy={saving}
               className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
             >
               {saving ? "Adding..." : "Add Merchant"}

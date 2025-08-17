@@ -10,8 +10,7 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
     let mounted = true;
     (async () => {
       try {
-        // const m = await getMerchant(merchantId);
-        const m = null; // replace with service
+        const m = await getMerchant(merchantId);
         if (!mounted) return;
         setMerchant(m || {});
       } catch (e) {

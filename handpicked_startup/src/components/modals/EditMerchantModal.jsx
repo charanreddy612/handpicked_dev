@@ -19,8 +19,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     let mounted = true;
     (async () => {
       try {
-        // const m = await getMerchant(merchantId);
-        const m = null; // replace with service call
+        const m = await getMerchant(merchantId);
         if (!mounted) return;
         const merchant = m || {};
         setForm({
@@ -144,8 +143,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     if (sideBanner) fd.append("side_banner", sideBanner);
 
     try {
-      // const { error } = await updateMerchant(merchantId, fd);
-      const error = null; // remove after wiring
+      const { error } = await updateMerchant(merchantId, fd);
       if (error) throw new Error(error.message || "Update failed");
       onSave?.();
       onClose?.();
