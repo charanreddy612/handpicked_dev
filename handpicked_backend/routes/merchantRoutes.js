@@ -1,6 +1,6 @@
 // src/routes/merchantRoutes.js
 import express from "express";
-import { uploadMemory } from "../middlewares/upload.js"; // same middleware used for blogs
+import { uploadMemory } from "../middleware/uploadMemory.js";
 import * as merchantController from "../controllers/merchantController.js";
 
 const router = express.Router();
