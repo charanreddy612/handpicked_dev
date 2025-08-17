@@ -1,9 +1,7 @@
 // src/controllers/merchantController.js
 import * as merchantRepo from "../dbhelper/MerchantRepo.js";
-import {
-  uploadImageBuffer,
-  deleteImageByPublicUrl,
-} from "../services/storageService.js";
+import { uploadImageBuffer } from "../services/storageService.js";
+import { deleteFilesByUrls } from "../services/deleteFilesByUrl.js";
 const BUCKET = process.env.UPLOAD_BUCKET || "merchant-images";
 const FOLDER = "merchants";
 
@@ -294,7 +292,7 @@ export async function deleteMerchant(req, res) {
     //delete files (non-fatal by default; log errors but proceed)
     try {
       if (urls.length) {
-        await deleteFilesByUrls(urls);
+        await deleteFilesByUrls(BUCKET, urls);
       }
     } catch (fileErr) {
       // Policy choice:
