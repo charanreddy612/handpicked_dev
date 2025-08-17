@@ -1,5 +1,12 @@
 // src/services/merchantService.js
-import http from "./http"; // adjust path if your http client lives elsewhere
+import axios from "axios";
+
+import { API_BASE_URL } from "../config/api";
+
+const http = axios.create({
+  baseURL: `${API_BASE_URL}/api`, // matches your other services
+  withCredentials: true,
+});
 
 // List with filters + pagination
 export async function listMerchants({ name = "", page = 1, limit = 20 } = {}) {
