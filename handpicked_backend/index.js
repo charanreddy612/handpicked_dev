@@ -21,7 +21,6 @@ const app = express();
 // ✅ CORS config – must be before any routes/middleware that need it
 const allowedOrigins = [
   'https://handpickedstartup.vercel.app',
-  'http://localhost:4321:' // optional for local dev
 ];
 
 app.use(cors({

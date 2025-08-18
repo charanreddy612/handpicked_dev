@@ -83,8 +83,6 @@ export default function StoresImportsPage() {
         sampleHref="/samples/6-Import-Stores-Slugs-Default-Content.xlsx"
         onUpload={onStep6}
       />
-
-      <style>{styles}</style>
     </div>
   );
 }
