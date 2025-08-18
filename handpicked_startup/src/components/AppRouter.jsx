@@ -10,7 +10,7 @@ import BlogsListPage from "./BlogsListPage.jsx";
 import BlogCategoriesListPage from "./BlogCategoryListPage.jsx";
 import AuthorsListPage from "./AuthorsListPage.jsx";
 import MerchantListPage from "./MerchantsListPage.jsx";
-import MerchantCategoriesPage from "./MerchantCategoriesListPage.jsx";
+import MerchantCategoriesPage from "./MerchantCategoriesPage.jsx";
 
 export default function AppRouter() {
   const [isClient, setIsClient] = useState(false);
