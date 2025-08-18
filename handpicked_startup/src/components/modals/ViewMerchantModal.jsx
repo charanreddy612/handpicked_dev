@@ -1,21 +1,21 @@
-// src/components/merchants/ViewMerchantModal.jsx
 import React, { useEffect, useState } from "react";
-import { getMerchant } from "../../services/merchantService.js";
+import { getMerchant } from "../../services/merchantService";
 
 export default function ViewMerchantModal({ merchantId, onClose }) {
-  const [merchant, setMerchant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [m, setM] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
+      setLoading(true);
       try {
-        const m = await getMerchant(merchantId);
+        const data = await getMerchant(merchantId);
         if (!mounted) return;
-        setMerchant(m || {});
+        setM(data || {});
       } catch (e) {
-        console.error("Load merchant failed:", e?.message || e);
-        if (mounted) setMerchant({});
+        console.error("Failed to load merchant:", e?.message || e);
+        if (mounted) setM({});
       } finally {
         if (mounted) setLoading(false);
       }
@@ -25,14 +25,18 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
     };
   }, [merchantId]);
 
-  const Field = ({ label, value }) => (
-    <div className="grid grid-cols-3 gap-4 items-start">
-      <div className="text-gray-600">{label}</div>
-      <div className="col-span-2">{value ?? "—"}</div>
-    </div>
+  const Bool = ({ v }) => (
+    <span className={v ? "text-green-600" : "text-gray-500"}>
+      {v ? "Yes" : "No"}
+    </span>
   );
 
-  const boolText = (v) => (v ? "Yes" : "No");
+  const Field = ({ label, children }) => (
+    <div>
+      <div className="text-gray-600 mb-1">{label}</div>
+      <div className="border rounded px-3 py-2">{children ?? "—"}</div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -44,76 +48,215 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-4xl rounded shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white w-full max-w-6xl rounded shadow-lg p-6 max-h-[95vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Merchant Details</h2>
+          <h2 className="text-lg font-semibold">View Store</h2>
           <button className="border px-3 py-1 rounded" onClick={onClose}>
             Close
           </button>
         </div>
 
-        <div className="space-y-3">
-          <Field label="ID" value={merchant.id} />
-          <Field label="Name" value={merchant.name} />
-          <Field label="Slug" value={merchant.slug} />
-          <Field label="Website" value={merchant.website} />
-          <Field label="Email" value={merchant.email} />
-          <Field label="Phone" value={merchant.phone} />
-          <Field label="Publish" value={boolText(merchant?.is_publish)} />
-          <Field label="Show Home" value={boolText(merchant?.show_home)} />
-          <Field label="Show Deals Page" value={boolText(merchant?.show_deals_page)} />
-          <Field label="Is Header" value={boolText(merchant?.is_header)} />
-          <Field label="Created" value={merchant?.created_at ? new Date(merchant.created_at).toLocaleString() : "—"} />
-          <Field label="Views" value={merchant?.views ?? 0} />
+        {/* Top basics */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Name">{m?.name}</Field>
+          <Field label="Slug">{m?.slug}</Field>
+        </div>
 
-          <div className="grid grid-cols-3 gap-6 mt-4">
-            <div>
-              <div className="text-gray-600 mb-1">Logo</div>
-              {merchant?.logo_url ? (
-                <img src={merchant.logo_url} alt="Logo" className="w-32 h-32 object-cover border rounded" />
-              ) : (
-                <div className="w-32 h-32 border rounded flex items-center justify-center text-xs text-gray-500">—</div>
-              )}
-            </div>
-            <div>
-              <div className="text-gray-600 mb-1">Top Banner</div>
-              {merchant?.top_banner_url ? (
-                <img src={merchant.top_banner_url} alt="Top banner" className="w-48 h-24 object-cover border rounded" />
-              ) : (
-                <div className="w-48 h-24 border rounded flex items-center justify-center text-xs text-gray-500">—</div>
-              )}
-            </div>
-            <div>
-              <div className="text-gray-600 mb-1">Side Banner</div>
-              {merchant?.side_banner_url ? (
-                <img src={merchant.side_banner_url} alt="Side banner" className="w-40 h-40 object-cover border rounded" />
-              ) : (
-                <div className="w-40 h-40 border rounded flex items-center justify-center text-xs text-gray-500">—</div>
-              )}
-            </div>
-          </div>
+        {/* Categories */}
+        <Field label="Categories">
+          {Array.isArray(m?.category_names) && m.category_names.length
+            ? m.category_names.join(", ")
+            : "—"}
+        </Field>
 
-          <div className="mt-4">
-            <div className="text-gray-600 mb-1">Description</div>
-            <div className="border rounded p-3 whitespace-pre-wrap">
-              {merchant?.description || "—"}
-            </div>
-          </div>
+        {/* URLs and tracker */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Web URL">{m?.web_url || m?.website}</Field>
+          <Field label="Affiliate URL">{m?.aff_url}</Field>
+        </div>
+        <Field label="Tracker Lock">
+          <Bool v={!!m?.tracker_lock} />
+        </Field>
 
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div>
-              <div className="text-gray-600 mb-1">Meta Title</div>
-              <div className="border rounded p-2">{merchant?.meta_title || "—"}</div>
+        {/* H1 */}
+        <Field label="H1 Keyword">{m?.h1keyword}</Field>
+
+        {/* Logo */}
+        <div>
+          <div className="text-gray-600 mb-1">Store Logo</div>
+          {m?.logo_url || m?.logo ? (
+            <img
+              src={m.logo_url || m.logo}
+              alt="logo"
+              className="w-32 h-32 object-cover border rounded"
+            />
+          ) : (
+            <div className="w-32 h-32 border rounded flex items-center justify-center text-xs text-gray-500">
+              —
             </div>
-            <div>
-              <div className="text-gray-600 mb-1">Meta Keywords</div>
-              <div className="border rounded p-2">{merchant?.meta_keywords || "—"}</div>
+          )}
+        </div>
+
+        {/* SEO */}
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          <Field label="SEO Title">{m?.meta_title}</Field>
+          <Field label="SEO Keywords">{m?.meta_keywords}</Field>
+          <Field label="SEO Description">{m?.meta_description}</Field>
+        </div>
+
+        {/* Content blocks */}
+        <div className="mt-4 grid grid-cols-1 gap-4">
+          <Field label="Side Description">
+            <div className="prose max-w-none whitespace-pre-wrap">
+              {m?.side_description_html || "—"}
             </div>
-            <div>
-              <div className="text-gray-600 mb-1">Meta Description</div>
-              <div className="border rounded p-2">{merchant?.meta_description || "—"}</div>
+          </Field>
+          <Field label="Description">
+            <div className="prose max-w-none whitespace-pre-wrap">
+              {m?.description_html || m?.description || "—"}
             </div>
+          </Field>
+          <Field label="Table Content">
+            <div className="prose max-w-none whitespace-pre-wrap">
+              {m?.table_content_html || "—"}
+            </div>
+          </Field>
+        </div>
+
+        {/* Ads and brand categories */}
+        <div className="mt-4">
+          <Field label="Ads Description">
+            <div className="prose max-w-none whitespace-pre-wrap">
+              {m?.ads_description_html || "—"}
+            </div>
+          </Field>
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <Field label="Brand Categories">
+              {Array.isArray(m?.brand_categories) && m.brand_categories.length
+                ? m.brand_categories.join(", ")
+                : "—"}
+            </Field>
+            <Field label="Ads Description (Label)">
+              {m?.ads_description_label}
+            </Field>
           </div>
+        </div>
+
+        {/* Toggles */}
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <Field label="Sidebar">
+            <Bool v={!!m?.sidebar} />
+          </Field>
+          <Field label="Home">
+            <Bool v={!!m?.home} />
+          </Field>
+          <Field label="Ads Block All">
+            <Bool v={!!m?.ads_block_all} />
+          </Field>
+          <Field label="Ads Block Banners">
+            <Bool v={!!m?.ads_block_banners} />
+          </Field>
+          <Field label="Is Header">
+            <Bool v={!!m?.is_header} />
+          </Field>
+          <Field label="Deals Home">
+            <Bool v={!!m?.deals_home} />
+          </Field>
+          <Field label="Tag Home">
+            <Bool v={!!m?.tag_home} />
+          </Field>
+          <Field label="Amazon Store">
+            <Bool v={!!m?.amazon_store} />
+          </Field>
+          <Field label="Active">
+            <Bool v={!!m?.active} />
+          </Field>
+          <Field label="Show at Search Bar">
+            <Bool v={!!m?.show_at_search_bar} />
+          </Field>
+          <Field label="Extension Active">
+            <Bool v={!!m?.extension_active} />
+          </Field>
+          <Field label="Extension Mandatory">
+            <Bool v={!!m?.extension_mandatory} />
+          </Field>
+          <Field label="Is Header (2)">
+            <Bool v={!!m?.is_header_2} />
+          </Field>
+        </div>
+
+        {/* Radios */}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Coupon Icon">{m?.coupon_icon_visibility || "—"}</Field>
+          <Field label="Store Status">
+            {m?.store_status_visibility || "—"}
+          </Field>
+        </div>
+
+        {/* Lists */}
+        <div className="mt-4 border rounded p-3">
+          <div className="font-medium mb-2">Coupon H2 & Descriptions</div>
+          {Array.isArray(m?.coupon_h2_blocks) && m.coupon_h2_blocks.length ? (
+            <ul className="list-disc pl-6">
+              {m.coupon_h2_blocks.map((b, i) => (
+                <li key={i}>
+                  {b.heading} — {b.description}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-gray-500">—</div>
+          )}
+        </div>
+
+        <div className="mt-4 border rounded p-3">
+          <div className="font-medium mb-2">Coupon H3 & Descriptions</div>
+          {Array.isArray(m?.coupon_h3_blocks) && m.coupon_h3_blocks.length ? (
+            <ul className="list-disc pl-6">
+              {m.coupon_h3_blocks.map((b, i) => (
+                <li key={i}>
+                  {b.heading} — {b.description}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-gray-500">—</div>
+          )}
+        </div>
+
+        <div className="mt-4 border rounded p-3">
+          <div className="font-medium mb-2">Store Question and Answers</div>
+          {Array.isArray(m?.faqs) && m.faqs.length ? (
+            <ul className="list-disc pl-6">
+              {m.faqs.map((qa, i) => (
+                <li key={i}>
+                  <span className="font-medium">{qa.question}</span> —{" "}
+                  {qa.answer}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-gray-500">—</div>
+          )}
+        </div>
+
+        <div className="mt-4 border rounded p-3">
+          <div className="font-medium mb-2">Store Suggestions</div>
+          {Array.isArray(m?.suggestions) && m.suggestions.length ? (
+            <ul className="list-disc pl-6">
+              {m.suggestions.map((s, i) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-gray-500">—</div>
+          )}
+        </div>
+
+        <div className="flex justify-end mt-6">
+          <button className="border px-4 py-2 rounded" onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
     </div>
