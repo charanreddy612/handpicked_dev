@@ -1,7 +1,7 @@
 // src/routes/importRoutes.js
 import express from "express";
 import { uploadMemory } from "../middleware/uploadMemory.js";
-import * as importsController from "../controllers/importsController.js";
+import * as importsController from "../controllers/ImportsController.js";
 
 const router = express.Router();
 
