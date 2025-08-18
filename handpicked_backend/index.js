@@ -13,6 +13,7 @@ import blogCategoryRoutes from './routes/blogCategoryRoutes.js';
 import authorRoutes from './routes/authorRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
 import merchantCategoryRoutes from './routes/merchantCategoryRoutes.js';
+import importRoutes from './routes/importRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api/blog-categories', blogCategoryRoutes);
 app.use('/api/authors', authorRoutes);
 app.use("/api/merchants", merchantRoutes);
 app.use("/api/merchant-categories", merchantCategoryRoutes);
+app.use("/api/imports", importRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Handpicked Backend API' });

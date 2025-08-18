@@ -11,6 +11,7 @@ import BlogCategoriesListPage from "./BlogCategoryListPage.jsx";
 import AuthorsListPage from "./AuthorsListPage.jsx";
 import MerchantListPage from "./MerchantsListPage.jsx";
 import MerchantCategoriesPage from "./MerchantCategoriesPage.jsx";
+import StoresImportsPage from "./StoresImportPage.jsx";
 
 export default function AppRouter() {
   const [isClient, setIsClient] = useState(false);
@@ -48,6 +49,7 @@ export default function AppRouter() {
           <Route path="authors" element={<AuthorsListPage />} />
           <Route path="merchants" element={<MerchantListPage/>} />
           <Route path="merchant-categories" element={<MerchantCategoriesPage />} />
+          <Route path="stepImports" element={<StoresImportsPage />} />
            {/* More child screens here */}
         </Route>
 
