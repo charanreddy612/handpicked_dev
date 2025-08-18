@@ -6,9 +6,9 @@ import {
   // toggleMerchantCategoryStatus,
   // removeMerchantCategory,
 } from "../services/merchantCategoryService.js";
-import ViewMerchantCategoryModal from "../../components/modals/ViewMerchantCategoryModal";
-import AddMerchantCategoryModal from "../../components/modals/AddMerchantCategoryModal";
-import EditMerchantCategoryModal from "../../components/modals/EditMerchantCategoryModal";
+import ViewMerchantCategoryModal from "../components/modals/ViewMerchantCategoryModal";
+import AddMerchantCategoryModal from "../components/modals/AddMerchantCategoryModal";
+import EditMerchantCategoryModal from "../components/modals/EditMerchantCategoryModal";
 
 export default function MerchantCategoriesPage() {
   const [filters, setFilters] = useState({
