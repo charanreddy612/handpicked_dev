@@ -1,5 +1,5 @@
 // src/dbhelper/CouponsRepo.js
-import { supabase } from "../dbhelper/dbclient.js";
+import { supabase } from "./dbclient.js";
 
 function toInt(v) {
   const n = Number(v);
