@@ -1,6 +1,6 @@
 // src/controllers/couponsController.js
-import * as CouponsRepo from "../dbhelper/CouponsRepo.js";
 import { uploadImageBuffer } from "../services/storageService.js";
+import * as CouponsRepo from "../dbhelper/CouponsRepo.js"
 
 const BUCKET = process.env.UPLOAD_BUCKET || "coupon-images";
 const FOLDER = "coupons";
