@@ -14,6 +14,7 @@ import authorRoutes from './routes/authorRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
 import merchantCategoryRoutes from './routes/merchantCategoryRoutes.js';
 import importRoutes from './routes/importRoutes.js';
+import couponsRoutes from './routes/couponsRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/authors', authorRoutes);
 app.use("/api/merchants", merchantRoutes);
 app.use("/api/merchant-categories", merchantCategoryRoutes);
 app.use("/api/imports", importRoutes);
+app.use("/api/coupons", couponsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Handpicked Backend API' });
