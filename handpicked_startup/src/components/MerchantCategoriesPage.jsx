@@ -127,7 +127,7 @@ export default function MerchantCategoriesPage() {
     <div className="p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold">Store Categories</h1>
+        <h1 className="text-xl font-semibold">Merchant Categories</h1>
         <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => setShowAdd(true)}>
           + Add
         </button>
