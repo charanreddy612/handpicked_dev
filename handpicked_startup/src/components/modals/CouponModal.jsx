@@ -35,6 +35,11 @@ export default function CouponModal({ id, onClose }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    document.body.classList.add("modal-open");
+    return () => document.body.classList.remove("modal-open");
+  }, []);
+
+  useEffect(() => {
     if (!isEdit) return;
     (async () => {
       const data = await getCoupon(id);
