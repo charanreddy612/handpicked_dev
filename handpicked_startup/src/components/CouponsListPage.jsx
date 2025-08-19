@@ -6,7 +6,7 @@ import {
   removeCoupon,
 } from "../services/couponsService.js";
 import CouponModal from "../components/modals/CouponModal.jsx";
-import ViewCouponModal from "./components/modals/ViewCouponModal.jsx";
+import ViewCouponModal from "../components/modals/ViewCouponModal.jsx";
 
 export default function CouponsListPage() {
   const [filters, setFilters] = useState({
