@@ -100,6 +100,7 @@ export default function BlogsListPage() {
               <th className="p-3 text-left">Top Category</th>
               <th className="p-3 text-left">Category Order</th>
               <th className="p-3 text-left">Blogs</th>
+              <th className="p-3 text-left">Category</th>
               <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
@@ -126,6 +127,7 @@ export default function BlogsListPage() {
                   </td>
                   <td className="p-3">{b.category?.category_order ?? 0}</td>
                   <td className="p-3">{b.blogs_count ?? 0}</td>
+                  <td className="p-3">{b.category_name ?? b.top_category_name ?? "---"}</td>
                   <td className="p-3 flex gap-2 items-center">
                     {/* Status toggle */}
                     <button

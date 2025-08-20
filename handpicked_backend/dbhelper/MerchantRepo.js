@@ -50,7 +50,7 @@ export async function list({ name = "", page = 1, limit = 20 } = {}) {
   const to = from + limit - 1;
 
   const selectCols =
-    "id, name, slug, is_publish, views, created_at, logo_url, top_banner_url, side_banner_url";
+    "id, name, slug, is_publish, category_names, views, created_at, logo_url, top_banner_url, side_banner_url";
 
   let countQuery = supabase
     .from("merchants")

@@ -8,6 +8,7 @@ import {
 import ViewMerchantModal from "../components/modals/ViewMerchantModal";
 import AddMerchantModal from "../components/modals/AddMerchantModal";
 import EditMerchantModal from "../components/modals/EditMerchantModal";
+import ViewMerchantCategoriesModal from "../components/modals/ViewMerchantCategoriesModal";
 
 export default function MerchantsListPage() {
   const [filters, setFilters] = useState({ name: "" });
@@ -17,6 +18,11 @@ export default function MerchantsListPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [catView, setCatView] = useState({
+    open: false,
+    name: "",
+    categories: [],
+  });
 
   // Modals
   const [showAdd, setShowAdd] = useState(false);
@@ -160,6 +166,7 @@ export default function MerchantsListPage() {
                 <th className="text-left p-2 border-b">Created</th>
                 <th className="text-left p-2 border-b">Views</th>
                 <th className="text-left p-2 border-b">Coupons</th>
+                <th className="p-2 border-b text-left">Categories</th>
                 <th className="text-left p-2 border-b">Actions</th>
               </tr>
             </thead>
@@ -189,6 +196,23 @@ export default function MerchantsListPage() {
                         onClick={() => alert("TODO: view coupons")}
                       >
                         View Coupons
+                      </button>
+                    </td>
+                    <td className="p-2 border-b">
+                      {" "}
+                      <button
+                        className="text-blue-600 underline"
+                        onClick={() =>
+                          setCatView({
+                            open: true,
+                            name: r.name || r.slug,
+                            categories: Array.isArray(r.category_names)
+                              ? r.category_names
+                              : [],
+                          })
+                        }
+                      >
+                        View Categories
                       </button>
                     </td>
                     <td className="p-2 border-b">
@@ -311,6 +335,12 @@ export default function MerchantsListPage() {
           onSave={onAfterMutate}
         />
       )}
+      <ViewMerchantCategoriesModal
+        open={catView.open}
+        storeName={catView.name}
+        categories={catView.categories}
+        onClose={() => setCatView({ open: false, name: "", categories: [] })}
+      />
     </div>
   );
 }

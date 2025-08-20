@@ -22,6 +22,7 @@ export async function list({ title }) {
     ...r,
     // For compatibility with your table headings:
     top_category_name: r.category?.name ?? null,
+    category_name: r.category?.name ?? null,
     category_order: r.category?.category_order ?? null,
     // Also expose a structured category object
     category: r.category
