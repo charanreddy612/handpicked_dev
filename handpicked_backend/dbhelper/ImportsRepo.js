@@ -1,7 +1,7 @@
 // src/dbhelper/ImportsRepo.js
-import { supabase } from "../dbhelper/dbclient.js";
+import { supabase } from "./dbclient.js";
 
-// Utilities
+// Helpers
 const toSlug = (s) =>
   String(s || "")
     .trim()
@@ -10,33 +10,8 @@ const toSlug = (s) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export async function ensureUniqueMerchantSlugOnUpdate(id, proposed) {
-  const seed = toSlug(proposed || "merchant");
-  let slug = seed;
-  for (let i = 0; i < 50; i++) {
-    const { data, error } = await supabase
-      .from("merchants")
-      .select("id")
-      .eq("slug", slug)
-      .neq("id", id)
-      .limit(1);
-    if (error) throw error;
-    if (!data || data.length === 0) return slug;
-    slug = `${seed}-${i + 1}`;
-  }
-  return `${seed}-${Date.now()}`;
-}
+// ---------- Merchants ----------
 
-// Generic chunked insert (fast path when no conflict handling is needed)
-export async function chunkedInsert(table, rows, chunkSize = 500) {
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const slice = rows.slice(i, i + chunkSize);
-    const { error } = await supabase.from(table).insert(slice);
-    if (error) throw error;
-  }
-}
-
-// Merchants
 export async function getMerchantIdBySlug(slug) {
   const s = toSlug(slug);
   if (!s) return null;
@@ -44,14 +19,12 @@ export async function getMerchantIdBySlug(slug) {
     .from("merchants")
     .select("id")
     .eq("slug", s)
-    .limit(1)
     .maybeSingle();
   if (error) throw error;
   return data?.id || null;
 }
 
 export async function upsertMerchantBasic(row) {
-  // Minimal fields from Step 1
   const payload = {
     name: row.name,
     slug: toSlug(row.slug || row.name),
@@ -61,14 +34,16 @@ export async function upsertMerchantBasic(row) {
     meta_title: row.seo_title || "",
     meta_description: row.seo_desc || "",
   };
-  if (!payload.slug) throw new Error("Missing slug");
 
-  // Does it exist?
+  if (!payload.slug || !payload.name) {
+    throw new Error("Missing required merchant fields (name/slug).");
+  }
+
+  // Check existing by slug
   const { data: existing, error: ge } = await supabase
     .from("merchants")
-    .select("id, slug")
+    .select("id")
     .eq("slug", payload.slug)
-    .limit(1)
     .maybeSingle();
   if (ge) throw ge;
 
@@ -77,7 +52,7 @@ export async function upsertMerchantBasic(row) {
       .from("merchants")
       .update(payload)
       .eq("id", existing.id)
-      .select()
+      .select("id")
       .single();
     if (error) throw error;
     return { action: "update", id: data.id };
@@ -85,77 +60,77 @@ export async function upsertMerchantBasic(row) {
     const { data, error } = await supabase
       .from("merchants")
       .insert(payload)
-      .select()
+      .select("id")
       .single();
     if (error) throw error;
     return { action: "insert", id: data.id };
   }
 }
 
-export async function updateMerchantBySlug(slug, patch) {
+export async function updateMerchantFirstParagraphBySlug(slug, html) {
   const s = toSlug(slug);
-  const clean = Object.fromEntries(
-    Object.entries(patch).filter(([, v]) => v !== undefined)
-  );
-  if (!s || !Object.keys(clean).length) return { updated: 0 };
   const { data, error } = await supabase
     .from("merchants")
-    .update(clean)
+    .update({ side_description_html: html || "" })
     .eq("slug", s)
     .select("id")
     .single();
   if (error) throw error;
-  return { updated: 1, id: data.id };
+  return { id: data.id, updated: 1 };
 }
 
-export async function updateMerchantSeoDescBySlug(slug, seo_desc) {
-  return updateMerchantBySlug(slug, { meta_description: seo_desc || "" });
+export async function updateMerchantSeoDescBySlug(slug, desc) {
+  const s = toSlug(slug);
+  const { data, error } = await supabase
+    .from("merchants")
+    .update({ meta_description: desc || "" })
+    .eq("slug", s)
+    .select("id")
+    .single();
+  if (error) throw error;
+  return { id: data.id, updated: 1 };
 }
 
-export async function updateMerchantFirstParagraphBySlug(slug, html) {
-  // Map to your chosen field; using side_description_html per our DDL
-  return updateMerchantBySlug(slug, { side_description_html: html || "" });
-}
-
-export async function updateMerchantSlug(oldSlug, newSlug) {
+export async function updateMerchantSlug(oldSlug, newSlugSeed) {
   const sOld = toSlug(oldSlug);
-  const sNewSeed = toSlug(newSlug);
-  if (!sOld || !sNewSeed) throw new Error("Invalid slugs");
+  const sNew = toSlug(newSlugSeed);
+  if (!sOld || !sNew) throw new Error("Invalid old_slug or new_slug.");
 
-  // Load current id
+  // Find target merchant
   const { data: cur, error: ge } = await supabase
     .from("merchants")
     .select("id")
     .eq("slug", sOld)
     .maybeSingle();
   if (ge) throw ge;
-  if (!cur?.id) throw new Error(`Merchant not found for old_slug: ${sOld}`);
+  if (!cur?.id) throw new Error(`Merchant not found for slug '${sOld}'`);
 
-  // Ensure uniqueness
-  let candidate = sNewSeed;
-  for (let i = 0; i < 50; i++) {
-    const { data, error } = await supabase
+  // Ensure new slug uniqueness (simple suffixing)
+  let candidate = sNew;
+  for (let i = 0; i < 100; i++) {
+    const { data: taken, error: ce } = await supabase
       .from("merchants")
       .select("id")
       .eq("slug", candidate)
       .neq("id", cur.id)
       .limit(1);
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    candidate = `${sNewSeed}-${i + 1}`;
+    if (ce) throw ce;
+    if (!taken || taken.length === 0) break;
+    candidate = `${sNew}-${i + 1}`;
   }
 
   const { data, error } = await supabase
     .from("merchants")
     .update({ slug: candidate })
     .eq("id", cur.id)
-    .select("id")
+    .select("id, slug")
     .single();
   if (error) throw error;
-  return { id: data.id, slug: candidate };
+  return { id: data.id, slug: data.slug };
 }
 
-// Tags relation (assuming tables: tags, store_tags [merchant_id, tag_id] unique)
+// ---------- Tags & Relations ----------
+
 export async function getTagIdBySlug(slug) {
   const s = toSlug(slug);
   if (!s) return null;
@@ -163,13 +138,14 @@ export async function getTagIdBySlug(slug) {
     .from("tags")
     .select("id")
     .eq("slug", s)
-    .limit(1)
     .maybeSingle();
   if (error) throw error;
   return data?.id || null;
 }
 
 export async function ensureStoreTagRelation(merchantId, tagId) {
+  if (!merchantId || !tagId) throw new Error("merchantId and tagId required");
+
   const { data: existing, error: ge } = await supabase
     .from("tag_stores")
     .select("merchant_id, tag_id")
@@ -177,53 +153,43 @@ export async function ensureStoreTagRelation(merchantId, tagId) {
     .eq("tag_id", tagId)
     .maybeSingle();
   if (ge) throw ge;
+
   if (existing) return { created: 0 };
 
   const { error } = await supabase
     .from("tag_stores")
     .insert({ merchant_id: merchantId, tag_id: tagId });
   if (error) throw error;
+
   return { created: 1 };
 }
 
-// Coupons/Deals (assuming table: coupons)
-export async function insertCouponDeal(merchantId, payload) {
-  const row = {
-    merchant_id: merchantId,
-    coupon_type: payload.coupon_type, // 'coupon' | 'deal'
-    coupon_code: payload.coupon_code || null,
-    title: payload.title,
-    description: payload.descp || "",
-    type_text: payload.type_text || "",
-    is_editor: !!payload.is_editor,
-    is_publish: false,
-  };
-  const { data, error } = await supabase
-    .from("coupons")
-    .insert(row)
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id;
-}
+// ---------- Coupons / Deals ----------
 
-// Optional idempotent upsert for coupons
+/**
+ * Natural key upsert to avoid duplicates:
+ * (merchant_id, coupon_type, title, coalesce(coupon_code,''))
+ * Fields supported from Step 3: descp -> description, type_text, is_editor
+ */
 export async function upsertCouponDealByNaturalKey(merchantId, payload) {
-  const key = {
-    merchant_id: merchantId,
-    coupon_type: payload.coupon_type,
-    title: payload.title,
-    coupon_code:
-      payload.coupon_type === "coupon" ? payload.coupon_code || "" : "",
-  };
+  if (!merchantId) throw new Error("merchantId required");
+  const couponType = String(payload.coupon_type || "").toLowerCase();
+  if (couponType !== "coupon" && couponType !== "deal") {
+    throw new Error(`Invalid coupon_type '${payload.coupon_type}'`);
+  }
+  if (!payload.title) throw new Error("title required");
 
+  const normalizedCode =
+    couponType === "coupon" ? payload.coupon_code || "" : "";
+
+  // Find existing by natural key
   const { data: existing, error: ge } = await supabase
     .from("coupons")
     .select("id")
-    .eq("merchant_id", key.merchant_id)
-    .eq("coupon_type", key.coupon_type)
-    .eq("title", key.title)
-    .eq("coupon_code", key.coupon_code)
+    .eq("merchant_id", merchantId)
+    .eq("coupon_type", couponType)
+    .eq("title", payload.title)
+    .eq("coupon_code", normalizedCode)
     .maybeSingle();
   if (ge) throw ge;
 
@@ -243,7 +209,16 @@ export async function upsertCouponDealByNaturalKey(merchantId, payload) {
     if (error) throw error;
     return { action: "update", id: data.id };
   } else {
-    const row = { ...key, ...patch, is_publish: false };
+    const row = {
+      merchant_id: merchantId,
+      coupon_type: couponType,
+      title: payload.title,
+      coupon_code: normalizedCode,
+      description: patch.description,
+      type_text: patch.type_text,
+      is_editor: patch.is_editor,
+      is_publish: false, // default for new
+    };
     const { data, error } = await supabase
       .from("coupons")
       .insert(row)
