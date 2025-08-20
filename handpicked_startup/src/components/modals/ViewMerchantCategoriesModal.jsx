@@ -1,5 +1,11 @@
-function CategoriesModal({ open, onClose, storeName, categories }) {
+export default function ViewMerchantCategoriesModal({
+  open,
+  onClose,
+  storeName,
+  categories,
+}) {
   if (!open) return null;
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-md rounded shadow-lg p-6 max-h-[90vh] overflow-y-auto">
@@ -9,6 +15,7 @@ function CategoriesModal({ open, onClose, storeName, categories }) {
             Close
           </button>
         </div>
+        text
         {Array.isArray(categories) && categories.length > 0 ? (
           <ul className="list-disc pl-5 space-y-1 text-sm">
             {categories.map((c, i) => (
