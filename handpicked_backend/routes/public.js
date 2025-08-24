@@ -10,27 +10,27 @@ import { stores as sitemapStores, blogs as sitemapBlogs } from "../controllers/p
 const publicRouter = Router();
 
 // Categories
-publicRouter.get("/public/v1/categories", publicCategories.list);
+publicRouter.get("/categories", publicCategories.list);
 
 // Stores
-publicRouter.get("/public/v1/stores", publicStores.list);
-publicRouter.get("/public/v1/stores/:slug", publicStores.detail);
+publicRouter.get("/stores", publicStores.list);
+publicRouter.get("/stores/:slug", publicStores.detail);
 
 // Coupons
-publicRouter.get("/public/v1/coupons", publicCoupons.list);
+publicRouter.get("/coupons", publicCoupons.list);
 
 // Blogs
-publicRouter.get("/public/v1/blogs", publicBlogs.list);
-publicRouter.get("/public/v1/blogs/:slug", publicBlogs.detail);
+publicRouter.get("/blogs", publicBlogs.list);
+publicRouter.get("/blogs/:slug", publicBlogs.detail);
 
 // Search
-publicRouter.get("/public/v1/search", publicSearch.search);
+publicRouter.get("/search", publicSearch.search);
 
 // Health
-publicRouter.get("/public/v1/health", publicHealth.health);
+publicRouter.get("/health", publicHealth.health);
 
 //Sitemaps
-publicRouter.get("/v1/sitemaps/stores.xml", sitemapStores);
-publicRouter.get("/v1/sitemaps/blogs.xml", sitemapBlogs);
+publicRouter.get("/sitemaps/stores.xml", sitemapStores);
+publicRouter.get("/sitemaps/blogs.xml", sitemapBlogs);
 
 export default publicRouter;
