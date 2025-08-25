@@ -11,7 +11,7 @@ import { supabase } from "../dbhelper/dbclient.js";
 export async function uploadImageBuffer(bucket, folder, buffer, filename, mimetype) {
   const now = new Date();
   const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const safeName = filename.toLowerCase().replace(/\s+/g, "-");
+  const safeName = String(filename || "file").toLowerCase().replace(/\s+/g, "-");
   const path = `${folder}/${datePath}/${Date.now()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
