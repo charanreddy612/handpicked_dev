@@ -11,27 +11,27 @@ export default function CouponModal({ id, onClose }) {
   const isEdit = !!id;
 
   const [form, setForm] = useState({
-    store_id: String(coupon.merchant_id ?? ""),
-    coupon_type: coupon.coupon_type || "coupon",
-    title: coupon.title || "",
-    h_block: coupon.h_block || "",
-    coupon_code: coupon.coupon_code || "",
-    aff_url: coupon.aff_url || coupon.url || "",
-    description: coupon.description || "",
-    filter_id: String(coupon.filter_id ?? ""),
-    category_id: String(coupon.category_id ?? ""),
-    show_proof: Boolean(coupon.show_proof),
-    expiry_date: coupon.ends_at?.slice(0, 10) || "",
-    schedule_date: coupon.starts_at?.slice(0, 10) || "",
-    editor_pick: Boolean(coupon.is_editor),
-    editor_order: Number(coupon.editor_order ?? 0),
-    coupon_style: coupon.coupon_style || "custom",
-    special_msg_type: coupon.special_msg_type || "",
-    special_msg: coupon.special_msg || "",
-    push_to: coupon.push_to || "",
-    level: coupon.level || "",
-    home: Boolean(coupon.home),
-    is_brand_coupon: !!coupon.is_brand_coupon,
+    store_id: "",
+    coupon_type: "coupon", // 'coupon' | 'deal'
+    title: "",
+    h_block: "", // H2/H3 selection or key
+    coupon_code: "",
+    aff_url: "",
+    description: "",
+    filter_id: "",
+    category_id: "",
+    show_proof: false,
+    expiry_date: "",
+    schedule_date: "",
+    editor_pick: false,
+    editor_order: 0,
+    coupon_style: "custom",
+    special_msg_type: "",
+    special_msg: "",
+    push_to: "",
+    level: "",
+    home: false,
+    is_brand_coupon: false,
   });
 
   const [stores, setStores] = useState([]);
@@ -77,38 +77,38 @@ export default function CouponModal({ id, onClose }) {
   }, []);
 
   // Load existing record in edit mode
-  useEffect(() => {
-    if (!isEdit) return;
-    (async () => {
-      const result = await getCoupon(id);
-      if (!result?.data) return;
-      const coupon = result.data; // unwrap
-
-      setForm({
-        store_id: coupon.merchant_id || "",
-        coupon_type: coupon.coupon_type || "coupon",
-        title: coupon.title || "",
-        h_block: coupon.h_block || "",
-        coupon_code: coupon.coupon_code || "",
-        aff_url: coupon.aff_url || coupon.url || "",
-        description: coupon.description || "",
-        filter_id: coupon.filter_id || "",
-        category_id: coupon.category_id || "",
-        show_proof: !!coupon.show_proof,
-        expiry_date: coupon.ends_at?.slice(0, 10) || "",
-        schedule_date: coupon.starts_at?.slice(0, 10) || "",
-        editor_pick: !!coupon.is_editor,
-        editor_order: Number(coupon.editor_order || 0),
-        coupon_style: coupon.coupon_style || "custom",
-        special_msg_type: coupon.special_msg_type || "",
-        special_msg: coupon.special_msg || "",
-        push_to: coupon.push_to || "",
-        level: coupon.level || "",
-        home: !!coupon.home,
-        is_brand_coupon: !!coupon.is_brand_coupon,
-      });
-    })();
-  }, [id, isEdit]);
+useEffect(() => {
+  if (!isEdit) return;
+  (async () => {
+    const result = await getCoupon(id);
+    if (!result?.data) return;
+    const coupon = result.data; // unwrap
+    
+    setForm({
+    store_id: String(coupon.merchant_id ?? ""),
+    coupon_type: coupon.coupon_type || "coupon",
+    title: coupon.title || "",
+    h_block: coupon.h_block || "",
+    coupon_code: coupon.coupon_code || "",
+    aff_url: coupon.aff_url || coupon.url || "",
+    description: coupon.description || "",
+    filter_id: String(coupon.filter_id ?? ""),
+    category_id: String(coupon.category_id ?? ""),
+    show_proof: Boolean(coupon.show_proof),
+    expiry_date: coupon.ends_at?.slice(0, 10) || "",
+    schedule_date: coupon.starts_at?.slice(0, 10) || "",
+    editor_pick: Boolean(coupon.is_editor),
+    editor_order: Number(coupon.editor_order ?? 0),
+    coupon_style: coupon.coupon_style || "custom",
+    special_msg_type: coupon.special_msg_type || "",
+    special_msg: coupon.special_msg || "",
+    push_to: coupon.push_to || "",
+    level: coupon.level || "",
+    home: Boolean(coupon.home),
+    is_brand_coupon: !!coupon.is_brand_coupon,
+    });
+  })();
+}, [id, isEdit]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
