@@ -49,6 +49,7 @@ app.use(
     credentials: true, // set to false if you don’t use cookies/credentials
   })
 );
+app.options("/api/auth/login", cors());
 
 //Health first, at root.
 //app.get("/health", (req, res) => {
