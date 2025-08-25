@@ -12,7 +12,14 @@ export default function ViewCouponModal({ id, onClose }) {
   }, []);
 
   useEffect(() => {
-    (async () => setData(await getCoupon(id)))();
+    (async () => {
+      const result = await getCoupon(id);
+      if (result?.data) {
+        setData(result.data); // ✅ just the coupon object
+      } else {
+        setData(null);
+      }
+    })();
   }, [id]);
 
   if (!data) return null;

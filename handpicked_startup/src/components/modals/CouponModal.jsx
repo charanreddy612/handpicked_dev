@@ -77,36 +77,38 @@ export default function CouponModal({ id, onClose }) {
   }, []);
 
   // Load existing record in edit mode
-  useEffect(() => {
-    if (!isEdit) return;
-    (async () => {
-      const data = await getCoupon(id);
-      if (!data) return;
-      setForm({
-        store_id: data.merchant_id || "",
-        coupon_type: data.coupon_type || "coupon",
-        title: data.title || "",
-        h_block: data.h_block || "",
-        coupon_code: data.coupon_code || "",
-        aff_url: data.aff_url || data.url || "",
-        description: data.description || "",
-        filter_id: data.filter_id || "",
-        category_id: data.category_id || "",
-        show_proof: !!data.show_proof,
-        expiry_date: data.ends_at?.slice(0, 10) || "",
-        schedule_date: data.starts_at?.slice(0, 10) || "",
-        editor_pick: !!data.is_editor,
-        editor_order: Number(data.editor_order || 0),
-        coupon_style: data.coupon_style || "custom",
-        special_msg_type: data.special_msg_type || "",
-        special_msg: data.special_msg || "",
-        push_to: data.push_to || "",
-        level: data.level || "",
-        home: !!data.home,
-        is_brand_coupon: !!data.is_brand_coupon,
-      });
-    })();
-  }, [id, isEdit]);
+useEffect(() => {
+  if (!isEdit) return;
+  (async () => {
+    const result = await getCoupon(id);
+    if (!result?.data) return;
+    const coupon = result.data; // unwrap
+    
+    setForm({
+      store_id: coupon.merchant_id || "",
+      coupon_type: coupon.coupon_type || "coupon",
+      title: coupon.title || "",
+      h_block: coupon.h_block || "",
+      coupon_code: coupon.coupon_code || "",
+      aff_url: coupon.aff_url || coupon.url || "",
+      description: coupon.description || "",
+      filter_id: coupon.filter_id || "",
+      category_id: coupon.category_id || "",
+      show_proof: !!coupon.show_proof,
+      expiry_date: coupon.ends_at?.slice(0, 10) || "",
+      schedule_date: coupon.starts_at?.slice(0, 10) || "",
+      editor_pick: !!coupon.is_editor,
+      editor_order: Number(coupon.editor_order || 0),
+      coupon_style: coupon.coupon_style || "custom",
+      special_msg_type: coupon.special_msg_type || "",
+      special_msg: coupon.special_msg || "",
+      push_to: coupon.push_to || "",
+      level: coupon.level || "",
+      home: !!coupon.home,
+      is_brand_coupon: !!coupon.is_brand_coupon,
+    });
+  })();
+}, [id, isEdit]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
