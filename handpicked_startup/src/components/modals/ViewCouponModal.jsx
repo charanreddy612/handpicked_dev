@@ -13,15 +13,31 @@ export default function ViewCouponModal({ id, onClose }) {
   }, []);
 
   useEffect(() => {
+    let alive = true;
     (async () => {
       setLoading(true);
       try {
         const result = await getCoupon(id);
-        setData(result?.data || null);
+
+        // Robust unwrapping:
+        // - if service returns { data: {…}, error: null }  -> pick result.data
+        // - if axios-like { data: { data: {…}, error: null } } -> pick result.data.data
+        // - if it ever returns the object directly -> pick result
+        const coupon =
+          result?.data?.data ??
+          result?.data ??
+          (result && typeof result === "object" ? result : null);
+
+        if (alive) setData(coupon || null);
+      } catch {
+        if (alive) setData(null);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
   // close on ESC
@@ -65,10 +81,13 @@ export default function ViewCouponModal({ id, onClose }) {
           {data?.coupon_type === "coupon" && (
             <KV k="Coupon Code" v={data?.coupon_code || "-"} />
           )}
-          <KV k="Website/Affiliate URL" v={data?.aff_url || "-"} />
+          <KV k="Website/Affiliate URL" v={data?.aff_url?.trim() || "-"} />
           <KV k="H2/H3" v={data?.h_block || "-"} />
+
+          {/* present & nullable in your response */}
           <KV k="Filter" v={data?.filter_id ?? "-"} />
           <KV k="Store Category" v={data?.category_id ?? "-"} />
+
           <KV k="Show proof?" v={data?.show_proof ? "Yes" : "No"} />
           <KV k="Schedule Date" v={data?.starts_at?.slice(0, 10) || "-"} />
           <KV k="Expiry Date" v={data?.ends_at?.slice(0, 10) || "-"} />
