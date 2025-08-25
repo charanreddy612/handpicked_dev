@@ -77,27 +77,19 @@ export async function getById(id) {
     id,
     name,
     slug,
-
-    -- site + tracking
-    web_url,
+	web_url,
     aff_url,
     tracker_lock,
-
-    -- headings / SEO
-    h1keyword,
+	h1keyword,
     meta_title,
     meta_keywords,
     meta_description,
-
-    -- content blocks
-    side_description_html,
+	side_description_html,
     description_html,
     table_content_html,
     ads_description_html,
     ads_description_label,
-
-    -- flags
-    sidebar,
+	sidebar,
     home,
     ads_block_all,
     ads_block_banners,
@@ -110,24 +102,17 @@ export async function getById(id) {
     extension_active,
     extension_mandatory,
     is_header_2,
-
-    -- radios
     coupon_icon_visibility,
     store_status_visibility,
-
-    -- media
     logo_url,
     top_banner_url,
     side_banner_url,
-
-    -- arrays (jsonb)
     category_names,
     brand_categories,
     coupon_h2_blocks,
     coupon_h3_blocks,
     faqs,
     suggestions,
-
     views,
     created_at,
     updated_at

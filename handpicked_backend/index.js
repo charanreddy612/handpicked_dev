@@ -2,13 +2,13 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
-import helmet from "helmet";
+//import helmet from "helmet";
 
-import { etagMiddleware } from "./middleware/etagMiddleware.js";
-import { publicRateLimiter } from "./middleware/rateLimit.js";
-import { requestLogger } from "./middleware/logger.js";
+//import { etagMiddleware } from "./middleware/etagMiddleware.js";
+//import { publicRateLimiter } from "./middleware/rateLimit.js";
+//import { requestLogger } from "./middleware/logger.js";
 
-import publicRouter from "./routes/public.js";
+//import publicRouter from "./routes/public.js";
 import authRoutes from "./routes/authRoutes.js";
 import couponRoutes from "./routes/couponsRoutes.js";
 import bannerRoutes from "./routes/bannersRoutes.js";
@@ -51,30 +51,30 @@ app.use(
 );
 
 //Health first, at root.
-app.get("/health", (req, res) => {
-  res.status(200).json({ ok: true, uptime: process.uptime() });
-});
+//app.get("/health", (req, res) => {
+//  res.status(200).json({ ok: true, uptime: process.uptime() });
+//});
 
 //Logging
-if (process.env.NODE_ENV !== "test") {
-  app.use(requestLogger);
-}
+//if (process.env.NODE_ENV !== "test") {
+//  app.use(requestLogger);
+//}
 
 // Public: ETag + rate limit + router
-app.use(etagMiddleware);
-app.use("/public/v1", publicRateLimiter, publicRouter);
+//app.use(etagMiddleware);
+//app.use("/public/v1", publicRateLimiter, publicRouter);
 
 // Static
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 //Helmet Headers for API routes
-app.use(
-  "/api",
-  helmet({
-    contentSecurityPolicy: false, // can tune later
-    crossOriginEmbedderPolicy: false,
-  })
-);
+//app.use(
+//  "/api",
+//  helmet({
+//    contentSecurityPolicy: false, // can tune later
+//    crossOriginEmbedderPolicy: false,
+//  })
+//);
 
 // Admin/API routes (deduped)
 app.use("/api/auth", authRoutes);
@@ -110,6 +110,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
+//app.listen(PORT, "0.0.0.0", () => {
+//  console.log(`✅ Server running on port ${PORT}`);
+//});
