@@ -39,6 +39,7 @@ export default function CouponModal({ id, onClose }) {
   const [logoFile, setLogoFile] = useState(null);
   const [proofFile, setProofFile] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState([]);
 
   // Lock body scroll like your Merchants modal does
   useEffect(() => {
