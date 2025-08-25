@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createAuthor } from "../../services/authorService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function AddAuthorModal({ onClose, onSave }) {
   const [form, setForm] = useState({ name: "", email: "", is_active: true });
@@ -26,6 +27,9 @@ export default function AddAuthorModal({ onClose, onSave }) {
       onClose();
     }
   };
+
+   // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

@@ -1,6 +1,7 @@
 // src/components/merchants/AddMerchantModal.jsx
 import React, { useMemo, useState } from "react";
 import { addMerchant } from "../../services/merchantService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function AddMerchantModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -275,6 +276,9 @@ export default function AddMerchantModal({ onClose, onSave }) {
       {label}
     </label>
   );
+
+  // close on ESC
+useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

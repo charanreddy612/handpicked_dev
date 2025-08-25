@@ -1,6 +1,7 @@
 // src/components/tags/AddTagModal.jsx
 import { useState, useEffect } from "react";
-import { getTags, createTagWithImage } from "../../services/tagService"; // UPDATED: import our service methods
+import { getTags, createTagWithImage } from "../../services/tagService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function AddTagModal({ onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -61,11 +62,17 @@ export default function AddTagModal({ onClose, onSave }) {
     setSaving(false);
   };
 
+  // close on ESC
+  useEscClose(onClose);
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 overflow-y-auto max-h-screen">
         <h2 className="text-xl font-bold mb-4">Add Tag</h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
           {/* Tag Name */}
           <div>
             <label className="block font-medium mb-1">Tag Name</label>

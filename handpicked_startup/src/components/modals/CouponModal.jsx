@@ -5,6 +5,7 @@ import {
   updateCoupon,
 } from "../../services/couponsService";
 import { listMerchants } from "../../services/merchantService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function CouponModal({ id, onClose }) {
   const isEdit = !!id;
@@ -130,6 +131,9 @@ export default function CouponModal({ id, onClose }) {
       setBusy(false);
     }
   };
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

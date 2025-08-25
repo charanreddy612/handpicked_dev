@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getMerchant, updateMerchant } from "../../services/merchantService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [loading, setLoading] = useState(true);
@@ -298,6 +299,9 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
       </div>
     );
   }
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getAuthor } from "../../services/authorService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function ViewAuthorModal({ authorId, onClose }) {
   const [a, setA] = useState(null);
@@ -22,6 +23,9 @@ export default function ViewAuthorModal({ authorId, onClose }) {
       </div>
     );
   }
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

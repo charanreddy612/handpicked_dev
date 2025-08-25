@@ -1,6 +1,7 @@
 // src/components/merchantCategories/ViewMerchantCategoryModal.jsx
 import React, { useEffect, useState } from "react";
 import { getMerchantCategory } from "../../services/merchantCategoryService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function ViewMerchantCategoryModal({ categoryId, onClose }) {
   const [cat, setCat] = useState(null);
@@ -42,6 +43,9 @@ export default function ViewMerchantCategoryModal({ categoryId, onClose }) {
     );
   }
 
+  // close on ESC
+  useEscClose(onClose);
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-5xl rounded shadow-lg p-6 max-h-[90vh] overflow-y-auto">
@@ -59,11 +63,16 @@ export default function ViewMerchantCategoryModal({ categoryId, onClose }) {
           <Field label="Parent ID" value={cat?.parent_id ?? "—"} />
           <Field label="Publish" value={boolText(cat?.is_publish)} />
           <Field label="Show Home" value={boolText(cat?.show_home)} />
-          <Field label="Show Deals Page" value={boolText(cat?.show_deals_page)} />
+          <Field
+            label="Show Deals Page"
+            value={boolText(cat?.show_deals_page)}
+          />
           <Field label="Is Header" value={boolText(cat?.is_header)} />
           <Field
             label="Created"
-            value={cat?.created_at ? new Date(cat.created_at).toLocaleString() : "—"}
+            value={
+              cat?.created_at ? new Date(cat.created_at).toLocaleString() : "—"
+            }
           />
 
           <div className="grid grid-cols-3 gap-6 mt-4">
@@ -137,11 +146,15 @@ export default function ViewMerchantCategoryModal({ categoryId, onClose }) {
             </div>
             <div>
               <div className="text-gray-600 mb-1">Meta Keywords</div>
-              <div className="border rounded p-2">{cat?.meta_keywords || "—"}</div>
+              <div className="border rounded p-2">
+                {cat?.meta_keywords || "—"}
+              </div>
             </div>
             <div>
               <div className="text-gray-600 mb-1">Meta Description</div>
-              <div className="border rounded p-2">{cat?.meta_description || "—"}</div>
+              <div className="border rounded p-2">
+                {cat?.meta_description || "—"}
+              </div>
             </div>
           </div>
         </div>

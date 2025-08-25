@@ -1,6 +1,7 @@
 // src/components/tags/EditTagModal.jsx
 import { useState, useEffect } from "react";
 import { getTags, updateTagWithImage } from "../../services/tagService"; // UPDATED: New method
+import useEscClose from "../hooks/useEscClose";
 
 export default function EditTagModal({ tag, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -63,11 +64,17 @@ export default function EditTagModal({ tag, onClose, onSave }) {
     setSaving(false);
   };
 
+  // close on ESC
+  useEscClose(onClose);
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 overflow-y-auto max-h-screen">
         <h2 className="text-xl font-bold mb-4">Edit Tag</h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
           {/* Tag Name */}
           <div>
             <label className="block font-medium mb-1">Tag Name</label>
@@ -188,7 +195,15 @@ export default function EditTagModal({ tag, onClose, onSave }) {
             />
             {tag?.image_url && (
               <p className="text-sm mt-1">
-                Current: <a href={tag.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{tag.image_url}</a>
+                Current:{" "}
+                <a
+                  href={tag.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  {tag.image_url}
+                </a>
               </p>
             )}
           </div>

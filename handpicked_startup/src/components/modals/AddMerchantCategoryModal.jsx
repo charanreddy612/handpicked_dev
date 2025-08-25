@@ -1,8 +1,13 @@
 // src/components/merchantCategories/AddMerchantCategoryModal.jsx
 import React, { useState } from "react";
 import { addMerchantCategory } from "../../services/merchantCategoryService";
+import useEscClose from "../hooks/useEscClose";
 
-export default function AddMerchantCategoryModal({ onClose, onSave, parents = [] }) {
+export default function AddMerchantCategoryModal({
+  onClose,
+  onSave,
+  parents = [],
+}) {
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -76,6 +81,9 @@ export default function AddMerchantCategoryModal({ onClose, onSave, parents = []
       setSaving(false);
     }
   };
+
+  // close on ESC
+useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -173,11 +181,19 @@ export default function AddMerchantCategoryModal({ onClose, onSave, parents = []
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
               <label className="block mb-1">Thumbnail (webp/png)</label>
-              <input type="file" accept="image/*" onChange={(e) => setThumb(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumb(e.target.files?.[0] || null)}
+              />
             </div>
             <div>
               <label className="block mb-1">Top Banner</label>
-              <input type="file" accept="image/*" onChange={(e) => setTopBanner(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setTopBanner(e.target.files?.[0] || null)}
+              />
               <input
                 name="top_banner_link_url"
                 value={form.top_banner_link_url}
@@ -188,7 +204,11 @@ export default function AddMerchantCategoryModal({ onClose, onSave, parents = []
             </div>
             <div>
               <label className="block mb-1">Side Banner</label>
-              <input type="file" accept="image/*" onChange={(e) => setSideBanner(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSideBanner(e.target.files?.[0] || null)}
+              />
               <input
                 name="side_banner_link_url"
                 value={form.side_banner_link_url}
@@ -202,7 +222,12 @@ export default function AddMerchantCategoryModal({ onClose, onSave, parents = []
           {/* Toggles */}
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="show_home" checked={!!form.show_home} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="show_home"
+                checked={!!form.show_home}
+                onChange={handleChange}
+              />
               Show Home
             </label>
             <label className="flex items-center gap-2">
@@ -215,18 +240,32 @@ export default function AddMerchantCategoryModal({ onClose, onSave, parents = []
               Show Deals Page
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="is_publish" checked={!!form.is_publish} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="is_publish"
+                checked={!!form.is_publish}
+                onChange={handleChange}
+              />
               Publish
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="is_header" checked={!!form.is_header} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="is_header"
+                checked={!!form.is_header}
+                onChange={handleChange}
+              />
               Is Header
             </label>
           </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <button type="button" className="border px-4 py-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="border px-4 py-2 rounded"
+              onClick={onClose}
+            >
               Cancel
             </button>
             <button

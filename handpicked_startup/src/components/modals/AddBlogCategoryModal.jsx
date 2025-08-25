@@ -3,6 +3,7 @@ import {
   listBlogCategories,
   createBlogCategory,
 } from "../../services/blogCategoryService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function AddBlogCategoryModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -77,6 +78,9 @@ export default function AddBlogCategoryModal({ onClose, onSave }) {
       console.error(error.message);
     }
   };
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

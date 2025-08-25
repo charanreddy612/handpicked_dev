@@ -1,6 +1,7 @@
 // src/components/blogs/EditBlogModal.jsx
 import React, { useState, useEffect } from "react";
 import { getBlog, updateBlog, fetchBlogAux } from "../../services/blogService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function EditBlogModal({ blogId, onClose, onSave }) {
   const [form, setForm] = useState(null);
@@ -126,6 +127,9 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
       </div>
     );
   }
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

@@ -6,6 +6,7 @@ import {
   removeStoreFromTag,
   searchStores,
 } from "../../services/tagStoreService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function TagStoresModal({ tagId, onClose }) {
   const [linkedStores, setLinkedStores] = useState([]);
@@ -40,7 +41,7 @@ export default function TagStoresModal({ tagId, onClose }) {
     }
     const delayDebounce = setTimeout(async () => {
       const { data, error } = await searchStores(searchTerm);
-      console.log("searchResults:",{data, error});
+      console.log("searchResults:", { data, error });
       if (error) {
         console.error("Error searching merchants:", error.message);
         setSearchResults([]);
@@ -93,12 +94,13 @@ export default function TagStoresModal({ tagId, onClose }) {
     setRemovingId(null);
   };
 
+  // close on ESC
+  useEscClose(onClose);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative">
-        <h2 className="text-xl font-semibold mb-4">
-          Manage Merchants for Tag
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Manage Merchants for Tag</h2>
 
         {/* Search */}
         <div className="relative mb-4" ref={searchRef}>

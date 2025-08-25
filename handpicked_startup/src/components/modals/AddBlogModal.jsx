@@ -1,6 +1,7 @@
 // src/components/blogs/AddBlogModal.jsx
 import React, { useState, useEffect } from "react";
 import { createBlog, fetchBlogAux } from "../../services/blogService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function AddBlogModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -100,6 +101,9 @@ export default function AddBlogModal({ onClose, onSave }) {
       console.error("Error creating blog:", error.message);
     }
   };
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

@@ -1,6 +1,7 @@
 // src/pages/modals/ViewBlogCategoryModal.jsx
 import React, { useEffect, useState } from "react";
 import { getBlogCategory } from "../../services/blogCategoryService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function ViewBlogCategoryModal({ categoryId, onClose }) {
   const [cat, setCat] = useState(null);
@@ -19,6 +20,9 @@ export default function ViewBlogCategoryModal({ categoryId, onClose }) {
       </div>
     );
   }
+
+  // close on ESC
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

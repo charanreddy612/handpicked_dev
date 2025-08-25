@@ -1,8 +1,17 @@
 // src/components/merchantCategories/EditMerchantCategoryModal.jsx
 import React, { useEffect, useState } from "react";
-import { getMerchantCategory, updateMerchantCategory } from "../../services/merchantCategoryService";
+import {
+  getMerchantCategory,
+  updateMerchantCategory,
+} from "../../services/merchantCategoryService";
+import useEscClose from "../hooks/useEscClose";
 
-export default function EditMerchantCategoryModal({ categoryId, onClose, onSave, parents = [] }) {
+export default function EditMerchantCategoryModal({
+  categoryId,
+  onClose,
+  onSave,
+  parents = [],
+}) {
   const [form, setForm] = useState(null);
   const [thumb, setThumb] = useState(null);
   const [topBanner, setTopBanner] = useState(null);
@@ -161,6 +170,9 @@ export default function EditMerchantCategoryModal({ categoryId, onClose, onSave,
     );
   }
 
+  // close on ESC
+  useEscClose(onClose);
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-5xl rounded shadow-lg p-6 max-h-[90vh] overflow-y-auto">
@@ -258,25 +270,41 @@ export default function EditMerchantCategoryModal({ categoryId, onClose, onSave,
             <div>
               <label className="block mb-1">Thumbnail</label>
               {form.thumb_url ? (
-                <img src={form.thumb_url} alt="Thumb" className="w-32 h-32 object-cover border rounded mb-2" />
+                <img
+                  src={form.thumb_url}
+                  alt="Thumb"
+                  className="w-32 h-32 object-cover border rounded mb-2"
+                />
               ) : (
                 <div className="w-32 h-32 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
                   No thumbnail
                 </div>
               )}
-              <input type="file" accept="image/*" onChange={(e) => pickThumb(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => pickThumb(e.target.files?.[0] || null)}
+              />
             </div>
 
             <div>
               <label className="block mb-1">Top Banner</label>
               {form.top_banner_url ? (
-                <img src={form.top_banner_url} alt="Top banner" className="w-48 h-24 object-cover border rounded mb-2" />
+                <img
+                  src={form.top_banner_url}
+                  alt="Top banner"
+                  className="w-48 h-24 object-cover border rounded mb-2"
+                />
               ) : (
                 <div className="w-48 h-24 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
                   No top banner
                 </div>
               )}
-              <input type="file" accept="image/*" onChange={(e) => pickTop(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => pickTop(e.target.files?.[0] || null)}
+              />
               <input
                 name="top_banner_link_url"
                 value={form.top_banner_link_url}
@@ -289,13 +317,21 @@ export default function EditMerchantCategoryModal({ categoryId, onClose, onSave,
             <div>
               <label className="block mb-1">Side Banner</label>
               {form.side_banner_url ? (
-                <img src={form.side_banner_url} alt="Side banner" className="w-40 h-40 object-cover border rounded mb-2" />
+                <img
+                  src={form.side_banner_url}
+                  alt="Side banner"
+                  className="w-40 h-40 object-cover border rounded mb-2"
+                />
               ) : (
                 <div className="w-40 h-40 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
                   No side banner
                 </div>
               )}
-              <input type="file" accept="image/*" onChange={(e) => pickSide(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => pickSide(e.target.files?.[0] || null)}
+              />
               <input
                 name="side_banner_link_url"
                 value={form.side_banner_link_url}
@@ -309,7 +345,12 @@ export default function EditMerchantCategoryModal({ categoryId, onClose, onSave,
           {/* Toggles */}
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="show_home" checked={!!form.show_home} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="show_home"
+                checked={!!form.show_home}
+                onChange={handleChange}
+              />
               Show Home
             </label>
             <label className="flex items-center gap-2">
@@ -322,18 +363,32 @@ export default function EditMerchantCategoryModal({ categoryId, onClose, onSave,
               Show Deals Page
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="is_publish" checked={!!form.is_publish} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="is_publish"
+                checked={!!form.is_publish}
+                onChange={handleChange}
+              />
               Publish
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="is_header" checked={!!form.is_header} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="is_header"
+                checked={!!form.is_header}
+                onChange={handleChange}
+              />
               Is Header
             </label>
           </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <button type="button" className="border px-4 py-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="border px-4 py-2 rounded"
+              onClick={onClose}
+            >
               Cancel
             </button>
             <button
