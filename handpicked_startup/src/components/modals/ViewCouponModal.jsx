@@ -4,25 +4,24 @@ import useEscClose from "../hooks/useEscClose";
 
 export default function ViewCouponModal({ id, onClose }) {
   const [data, setData] = useState(null);
-
+  const [loading, setLoading] = useState(true);
   // Lock body scroll while open (same as other modals)
   useEffect(() => {
     document.body.classList.add("modal-open");
     return () => document.body.classList.remove("modal-open");
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     (async () => {
-      const result = await getCoupon(id);
-      if (result?.data) {
-        setData(result.data); // ✅ just the coupon object
-      } else {
-        setData(null);
+      setLoading(true);
+      try {
+        const result = await getCoupon(id);
+        setData(result?.data || null);
+      } finally {
+        setLoading(false);
       }
     })();
   }, [id]);
-
-  if (!data) return null;
 
   // close on ESC
   useEscClose(onClose);
