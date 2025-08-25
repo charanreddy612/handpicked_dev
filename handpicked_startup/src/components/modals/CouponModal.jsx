@@ -78,17 +78,11 @@ export default function CouponModal({ id, onClose }) {
 
   useEffect(() => {
     if (!isEdit) return;
+
     (async () => {
       const result = await getCoupon(id);
-
-      // Robust unwrapping
-      const coupon =
-        result?.data?.data ??
-        result?.data ??
-        (result && typeof result === "object" ? result : null);
-
+      const coupon = result?.data?.id ? result.data : result?.data?.data;
       if (!coupon) return;
-
       setForm({
         store_id: String(coupon.merchant_id ?? ""),
         coupon_type: coupon.coupon_type || "coupon",

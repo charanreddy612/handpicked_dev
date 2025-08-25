@@ -13,31 +13,16 @@ export default function ViewCouponModal({ id, onClose }) {
   }, []);
 
   useEffect(() => {
-    let alive = true;
     (async () => {
       setLoading(true);
       try {
         const result = await getCoupon(id);
-
-        // Robust unwrapping:
-        // - if service returns { data: {…}, error: null }  -> pick result.data
-        // - if axios-like { data: { data: {…}, error: null } } -> pick result.data.data
-        // - if it ever returns the object directly -> pick result
-        const coupon =
-          result?.data?.data ??
-          result?.data ??
-          (result && typeof result === "object" ? result : null);
-
-        if (alive) setData(coupon || null);
-      } catch {
-        if (alive) setData(null);
+        const coupon = result?.data?.id ? result.data : result?.data?.data;
+        setData(coupon || null);
       } finally {
-        if (alive) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
   }, [id]);
 
   // close on ESC
