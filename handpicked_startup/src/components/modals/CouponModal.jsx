@@ -33,6 +33,9 @@ export default function CouponModal({ id, onClose }) {
     is_brand_coupon: false,
   });
 
+  const [stores, setStores] = useState([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [storesError, setStoresError] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [proofFile, setProofFile] = useState(null);
   const [busy, setBusy] = useState(false);
