@@ -97,7 +97,7 @@ export default function CouponModal({ id, onClose }) {
           category_id: String(result.category_id ?? ""),
           show_proof: Boolean(result.show_proof),
           expiry_date: result.ends_at?.slice(0, 10) || "",
-          schedule_date: coupon.starts_at?.slice(0, 10) || "",
+          schedule_date: result.starts_at?.slice(0, 10) || "",
           editor_pick: Boolean(result.is_editor),
           editor_order: Number(result.editor_order ?? 0),
           coupon_style: result.coupon_style || "custom",
