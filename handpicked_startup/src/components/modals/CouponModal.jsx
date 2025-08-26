@@ -81,6 +81,8 @@ export default function CouponModal({ id, onClose }) {
 
     (async () => {
       const result = await getCoupon(id);
+      console.log("API result:", result);
+      console.log("Unwrapped coupon:", result?.data);
       const coupon = result?.data?.id ? result.data : result?.data?.data;
       if (!coupon) return;
       setForm({
