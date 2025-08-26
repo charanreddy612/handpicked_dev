@@ -80,34 +80,37 @@ export default function CouponModal({ id, onClose }) {
     if (!isEdit) return;
 
     (async () => {
-      const result = await getCoupon(id);
-      console.log("API result:", result);
-      console.log("Unwrapped coupon:", result?.data);
-      const coupon = result?.data?.id ? result.data : result?.data?.data;
-      if (!coupon) return;
-      setForm({
-        store_id: String(coupon.merchant_id ?? ""),
-        coupon_type: coupon.coupon_type || "coupon",
-        title: coupon.title || "",
-        h_block: coupon.h_block || "",
-        coupon_code: coupon.coupon_code || "",
-        aff_url: coupon.aff_url || coupon.url || "",
-        description: coupon.description || "",
-        filter_id: String(coupon.filter_id ?? ""),
-        category_id: String(coupon.category_id ?? ""),
-        show_proof: Boolean(coupon.show_proof),
-        expiry_date: coupon.ends_at?.slice(0, 10) || "",
-        schedule_date: coupon.starts_at?.slice(0, 10) || "",
-        editor_pick: Boolean(coupon.is_editor),
-        editor_order: Number(coupon.editor_order ?? 0),
-        coupon_style: coupon.coupon_style || "custom",
-        special_msg_type: coupon.special_msg_type || "",
-        special_msg: coupon.special_msg || "",
-        push_to: coupon.push_to || "",
-        level: coupon.level || "",
-        home: Boolean(coupon.home),
-        is_brand_coupon: !!coupon.is_brand_coupon,
-      });
+      try {
+        const result = await getCoupon(id);
+        console.log("Edit API result:", result);
+
+        if (!result) return;
+        setForm({
+          store_id: String(result.merchant_id ?? ""),
+          coupon_type: result.coupon_type || "coupon",
+          title: result.title || "",
+          h_block: result.h_block || "",
+          coupon_code: result.coupon_code || "",
+          aff_url: result.aff_url || result.url || "",
+          description: result.description || "",
+          filter_id: String(result.filter_id ?? ""),
+          category_id: String(result.category_id ?? ""),
+          show_proof: Boolean(result.show_proof),
+          expiry_date: result.ends_at?.slice(0, 10) || "",
+          schedule_date: coupon.starts_at?.slice(0, 10) || "",
+          editor_pick: Boolean(result.is_editor),
+          editor_order: Number(result.editor_order ?? 0),
+          coupon_style: result.coupon_style || "custom",
+          special_msg_type: result.special_msg_type || "",
+          special_msg: result.special_msg || "",
+          push_to: result.push_to || "",
+          level: result.level || "",
+          home: Boolean(result.home),
+          is_brand_coupon: !!result.is_brand_coupon,
+        });
+      } catch (err) {
+        console.error(err);
+      }
     })();
   }, [id, isEdit]);
 

@@ -12,15 +12,16 @@ export default function ViewCouponModal({ id, onClose }) {
     return () => document.body.classList.remove("modal-open");
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const result = await getCoupon(id);
         console.log("API result:", result);
-        console.log("Unwrapped coupon:", result?.data);
-        const coupon = result?.data?.id ? result.data : result?.data?.data;
-        setData(coupon || null);
+        setData(result || null);   // 👈 use result directly
+      } catch (err) {
+        console.error(err);
+        setData(null);
       } finally {
         setLoading(false);
       }
