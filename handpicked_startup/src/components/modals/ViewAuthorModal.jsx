@@ -16,6 +16,9 @@ export default function ViewAuthorModal({ authorId, onClose }) {
     };
   }, [authorId]);
 
+    // close on ESC
+  useEscClose(onClose);
+
   if (!a) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white">
@@ -23,9 +26,6 @@ export default function ViewAuthorModal({ authorId, onClose }) {
       </div>
     );
   }
-
-  // close on ESC
-  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

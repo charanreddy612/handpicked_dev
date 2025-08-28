@@ -13,6 +13,9 @@ export default function ViewBlogCategoryModal({ categoryId, onClose }) {
     })();
   }, [categoryId]);
 
+  // close on ESC
+  useEscClose(onClose);
+
   if (!cat) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white">
@@ -20,9 +23,6 @@ export default function ViewBlogCategoryModal({ categoryId, onClose }) {
       </div>
     );
   }
-
-  // close on ESC
-  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

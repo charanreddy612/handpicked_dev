@@ -120,6 +120,9 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     }
   };
 
+ // close on ESC
+  useEscClose(onClose);
+
   if (loading || !form) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white">
@@ -127,9 +130,6 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
       </div>
     );
   }
-
-  // close on ESC
-  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

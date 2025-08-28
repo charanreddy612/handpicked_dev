@@ -35,6 +35,10 @@ export default function ViewMerchantCategoryModal({ categoryId, onClose }) {
 
   const boolText = (v) => (v ? "Yes" : "No");
 
+
+  // close on ESC
+  useEscClose(onClose);
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white">
@@ -42,9 +46,6 @@ export default function ViewMerchantCategoryModal({ categoryId, onClose }) {
       </div>
     );
   }
-
-  // close on ESC
-  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

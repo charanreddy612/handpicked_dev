@@ -39,6 +39,10 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
     </div>
   );
 
+
+  // close on ESC
+  useEscClose(onClose);
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white">
@@ -46,9 +50,6 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
       </div>
     );
   }
-
-  // close on ESC
-  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

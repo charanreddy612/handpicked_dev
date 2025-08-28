@@ -6,7 +6,7 @@ export default function ViewMerchantCategoriesModal({
   categories,
 }) {
   if (!open) return null;
-
+0
   // close on ESC
   useEscClose(onClose);
 
