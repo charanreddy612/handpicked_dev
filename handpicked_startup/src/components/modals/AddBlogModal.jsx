@@ -1,9 +1,11 @@
 // src/components/blogs/AddBlogModal.jsx
-import React, { useState, useEffect, useRef } from "react";
-import ReactQuill from "react-quill";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import "react-quill/dist/quill.snow.css";
 import { createBlog, fetchBlogAux, uploadBlogImage } from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
+
+// Lazy load so Quill is only imported on the client
+const ReactQuill = lazy(() => import("react-quill"));
 
 export default function AddBlogModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -232,6 +234,7 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
+            <Suspense fallback={<div>Loading editor...</div>}>
             <ReactQuill
               ref={quillRef}
               theme="snow"
@@ -241,6 +244,7 @@ export default function AddBlogModal({ onClose, onSave }) {
               modules={modules}
               formats={formats}
             />
+            </Suspense>
           </div>
 
           {/* Meta */}

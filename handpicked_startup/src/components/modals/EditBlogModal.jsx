@@ -1,9 +1,10 @@
 // src/components/blogs/EditBlogModal.jsx
-import React, { useState, useEffect, useRef } from "react";
-import ReactQuill from "react-quill";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import "react-quill/dist/quill.snow.css";
 import { getBlog, updateBlog, fetchBlogAux, uploadBlogImage} from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
+
+const ReactQuill = lazy(() => import("react-quill"));
 
 export default function EditBlogModal({ blogId, onClose, onSave }) {
   const [form, setForm] = useState(null);
@@ -260,6 +261,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
+            <Suspense fallback={<div>Loading editor...</div>}>
             <ReactQuill
               ref={quillRef}
               theme="snow"
@@ -269,6 +271,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               modules={modules}
               formats={formats}
             />
+            </Suspense>
           </div>
 
           {/* Meta fields */}
