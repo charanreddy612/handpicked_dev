@@ -1,6 +1,8 @@
 // src/components/blogs/AddBlogModal.jsx
-import React, { useState, useEffect } from "react";
-import { createBlog, fetchBlogAux } from "../../services/blogService";
+import React, { useState, useEffect, useRef } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import { createBlog, fetchBlogAux, uploadBlogImage } from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
 
 export default function AddBlogModal({ onClose, onSave }) {
@@ -24,6 +26,8 @@ export default function AddBlogModal({ onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [loadingAux, setLoadingAux] = useState(true);
 
+  const quillRef = useRef(null);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -35,7 +39,6 @@ export default function AddBlogModal({ onClose, onSave }) {
       } catch (e) {
         setCategories([]);
         setAuthors([]);
-        // Optional: toast or console
         console.error("Failed to load blog aux:", e?.message || e);
       } finally {
         if (mounted) setLoadingAux(false);
@@ -69,26 +72,17 @@ export default function AddBlogModal({ onClose, onSave }) {
     setSaving(true);
     const fd = new FormData();
 
-    // Required/base fields
     fd.append("title", form.title);
     fd.append("slug", form.slug);
-
-    // Optional text
     fd.append("content", form.content || "");
     fd.append("meta_title", form.meta_title || "");
     fd.append("meta_keywords", form.meta_keywords || "");
     fd.append("meta_description", form.meta_description || "");
-
-    // Booleans as strings (server parses them)
     fd.append("is_publish", String(!!form.is_publish));
     fd.append("is_featured", String(!!form.is_featured));
     fd.append("is_top", String(!!form.is_top));
-
-    // IDs (append only if selected; avoid empty strings)
     if (form.category_id) fd.append("category_id", String(form.category_id));
     if (form.author_id) fd.append("author_id", String(form.author_id));
-
-    // Files
     if (thumb) fd.append("featured_thumb", thumb);
     if (image) fd.append("featured_image", image);
 
@@ -102,7 +96,59 @@ export default function AddBlogModal({ onClose, onSave }) {
     }
   };
 
-  // close on ESC
+  // Custom Quill image handler (uses backend /api/blogs/upload)
+  const imageHandler = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const url = await uploadBlogImage(file);
+        if (url) {
+          const editor = quillRef.current?.getEditor();
+          const range = editor.getSelection(true);
+          editor.insertEmbed(range.index, "image", url);
+          editor.setSelection(range.index + 1);
+        }
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Image upload failed. Please try again.");
+      }
+    };
+  };
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "link",
+    "image",
+  ];
+
   useEscClose(onClose);
 
   return (
@@ -186,12 +232,14 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <textarea
-              name="content"
+            <ReactQuill
+              ref={quillRef}
+              theme="snow"
               value={form.content}
-              onChange={handleChange}
-              rows={6}
-              className="w-full border px-3 py-2 rounded"
+              onChange={(val) => setForm((f) => ({ ...f, content: val }))}
+              className="bg-white"
+              modules={modules}
+              formats={formats}
             />
           </div>
 

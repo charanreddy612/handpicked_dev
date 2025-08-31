@@ -1,6 +1,8 @@
 // src/components/blogs/EditBlogModal.jsx
-import React, { useState, useEffect } from "react";
-import { getBlog, updateBlog, fetchBlogAux } from "../../services/blogService";
+import React, { useState, useEffect, useRef } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import { getBlog, updateBlog, fetchBlogAux, uploadBlogImage} from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
 
 export default function EditBlogModal({ blogId, onClose, onSave }) {
@@ -10,24 +12,24 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true); // overall modal loading
-  const [loadingAux, setLoadingAux] = useState(true); // auxiliary lists loading
+  const [loading, setLoading] = useState(true);
+  const [loadingAux, setLoadingAux] = useState(true);
+
+  const quillRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        // Load auxiliary lists (categories, authors)
         const aux = await fetchBlogAux();
         if (!mounted) return;
         setCategories(Array.isArray(aux?.categories) ? aux.categories : []);
         setAuthors(Array.isArray(aux?.authors) ? aux.authors : []);
         setLoadingAux(false);
-        // Load blog
+
         const blog = await getBlog(blogId);
         if (!mounted) return;
 
-        // Ensure controlled fields are present
         setForm({
           id: blog?.id,
           title: blog?.title || "",
@@ -67,6 +69,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
       mounted = false;
     };
   }, [blogId]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
@@ -88,25 +91,19 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     e.preventDefault();
     if (!form?.title || !form?.slug) return;
     setSaving(true);
+
     const fd = new FormData();
-    // Only append fields that the backend expects to update.
     fd.append("title", form.title);
     fd.append("slug", form.slug);
     fd.append("content", form.content || "");
     fd.append("meta_title", form.meta_title || "");
     fd.append("meta_keywords", form.meta_keywords || "");
     fd.append("meta_description", form.meta_description || "");
-
-    // Booleans as strings so backend parser can coerce
     fd.append("is_publish", String(!!form.is_publish));
     fd.append("is_featured", String(!!form.is_featured));
     fd.append("is_top", String(!!form.is_top));
-
-    // IDs only if selected (avoid sending empty strings)
     if (form.category_id) fd.append("category_id", String(form.category_id));
     if (form.author_id) fd.append("author_id", String(form.author_id));
-
-    // Files (optional)
     if (thumb) fd.append("featured_thumb", thumb);
     if (image) fd.append("featured_image", image);
 
@@ -120,7 +117,59 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     }
   };
 
- // close on ESC
+  // ✅ custom image handler now points to /api/blogs/upload
+  const imageHandler = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const url = await uploadBlogImage(file);
+        if (url) {
+          const editor = quillRef.current?.getEditor();
+          const range = editor.getSelection(true);
+          editor.insertEmbed(range.index, "image", url);
+          editor.setSelection(range.index + 1);
+        }
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Image upload failed. Please try again.");
+      }
+    };
+  };
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "link",
+    "image",
+  ];
+
   useEscClose(onClose);
 
   if (loading || !form) {
@@ -211,12 +260,14 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <textarea
-              name="content"
+            <ReactQuill
+              ref={quillRef}
+              theme="snow"
               value={form.content}
-              onChange={handleChange}
-              rows={6}
-              className="w-full border px-3 py-2 rounded"
+              onChange={(val) => setForm((f) => ({ ...f, content: val }))}
+              className="bg-white"
+              modules={modules}
+              formats={formats}
             />
           </div>
 
@@ -253,12 +304,8 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
 
           {/* File uploads */}
           <div className="grid grid-cols-2 gap-6">
-            {" "}
             <div>
-              {" "}
-              <label className="block mb-1">
-                Featured Thumb (optional)
-              </label>{" "}
+              <label className="block mb-1">Featured Thumb (optional)</label>
               {form.featured_thumb_url ? (
                 <img
                   src={form.featured_thumb_url}
@@ -267,10 +314,9 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
                 />
               ) : (
                 <div className="w-32 h-32 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
-                  {" "}
-                  No thumbnail{" "}
+                  No thumbnail
                 </div>
-              )}{" "}
+              )}
               <input
                 type="file"
                 accept="image/*"
@@ -282,13 +328,10 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
                     setForm((prev) => ({ ...prev, featured_thumb_url: url }));
                   }
                 }}
-              />{" "}
-            </div>{" "}
+              />
+            </div>
             <div>
-              {" "}
-              <label className="block mb-1">
-                Featured Image (optional)
-              </label>{" "}
+              <label className="block mb-1">Featured Image (optional)</label>
               {form.featured_image_url ? (
                 <img
                   src={form.featured_image_url}
@@ -297,10 +340,9 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
                 />
               ) : (
                 <div className="w-48 h-32 border rounded mb-2 flex items-center justify-center text-xs text-gray-500">
-                  {" "}
-                  No image{" "}
+                  No image
                 </div>
-              )}{" "}
+              )}
               <input
                 type="file"
                 accept="image/*"
@@ -312,27 +354,9 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
                     setForm((prev) => ({ ...prev, featured_image_url: url }));
                   }
                 }}
-              />{" "}
-            </div>{" "}
+              />
+            </div>
           </div>
-          {/* <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label>Featured Thumb (optional)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setThumb(e.target.files?.[0] || null)}
-              />
-            </div>
-            <div>
-              <label>Featured Image (optional)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImage(e.target.files?.[0] || null)}
-              />
-            </div>
-          </div> */}
 
           {/* Toggles */}
           <div className="flex gap-6">

@@ -1,6 +1,9 @@
 import * as blogRepo from "../dbhelper/BlogRepo.js";
 import { toSlug } from "../utils/slug.js";
-import { uploadImageBuffer, deleteImageByPublicUrl } from "../services/storageService.js";
+import {
+  uploadImageBuffer,
+  deleteImageByPublicUrl,
+} from "../services/storageService.js";
 
 const BUCKET = "blog-images";
 const FOLDER = "blogs";
@@ -15,7 +18,7 @@ const toBool = (v) => v === true || v === "true" || v === 1 || v === "1";
 export async function listBlogs(req, res) {
   try {
     const title = req.query?.title || null;
-    const rows = await blogRepo.list({ title});
+    const rows = await blogRepo.list({ title });
     return res.json({ data: rows, error: null });
   } catch (err) {
     return res.status(500).json(toError(err, "Error fetching blogs"));
@@ -40,7 +43,9 @@ export async function createBlog(req, res) {
     const body = req.body || {};
 
     if (!body.title || !String(body.title).trim()) {
-      return res.status(400).json({ data: null, error: { message: "Title is required" } });
+      return res
+        .status(400)
+        .json({ data: null, error: { message: "Title is required" } });
     }
 
     // Server-side slug generation
@@ -52,12 +57,16 @@ export async function createBlog(req, res) {
     if (req.files?.featured_thumb?.[0]) {
       const file = req.files.featured_thumb[0];
       const { url, error } = await uploadImageBuffer(
-        BUCKET, FOLDER,
+        BUCKET,
+        FOLDER,
         file.buffer,
         file.originalname,
         file.mimetype
       );
-      if (error) return res.status(500).json(toError(error, "Featured thumb upload failed"));
+      if (error)
+        return res
+          .status(500)
+          .json(toError(error, "Featured thumb upload failed"));
       featured_thumb_url = url;
     }
 
@@ -66,12 +75,16 @@ export async function createBlog(req, res) {
     if (req.files?.featured_image?.[0]) {
       const file = req.files.featured_image[0];
       const { url, error } = await uploadImageBuffer(
-        BUCKET, FOLDER,
+        BUCKET,
+        FOLDER,
         file.buffer,
         file.originalname,
         file.mimetype
       );
-      if (error) return res.status(500).json(toError(error, "Featured image upload failed"));
+      if (error)
+        return res
+          .status(500)
+          .json(toError(error, "Featured image upload failed"));
       featured_image_url = url;
     }
 
@@ -107,39 +120,56 @@ export async function updateBlog(req, res) {
     const body = req.body || {};
 
     const patch = {
-        title: body.title ?? undefined,
-        category_id: body.category_id !== undefined ? toNumOrNull(body.category_id) : undefined,
-        author_id: body.author_id !== undefined ? toNumOrNull(body.author_id) : undefined,
-        content: body.content ?? undefined,
-        meta_title: body.meta_title ?? undefined,
-        meta_keywords: body.meta_keywords ?? undefined,
-        meta_description: body.meta_description ?? undefined,
-        is_publish: body.is_publish !== undefined ? toBool(body.is_publish) : undefined,
-        is_featured: body.is_featured !== undefined ? toBool(body.is_featured) : undefined,
-        is_top: body.is_top !== undefined ? toBool(body.is_top) : undefined,
-        top_category_name: body.top_category_name ?? undefined,
-        category_order: body.category_order !== undefined ? Number(body.category_order) : undefined,
-        blogs_count: body.blogs_count !== undefined ? Number(body.blogs_count) : undefined,
-};
+      title: body.title ?? undefined,
+      category_id:
+        body.category_id !== undefined
+          ? toNumOrNull(body.category_id)
+          : undefined,
+      author_id:
+        body.author_id !== undefined ? toNumOrNull(body.author_id) : undefined,
+      content: body.content ?? undefined,
+      meta_title: body.meta_title ?? undefined,
+      meta_keywords: body.meta_keywords ?? undefined,
+      meta_description: body.meta_description ?? undefined,
+      is_publish:
+        body.is_publish !== undefined ? toBool(body.is_publish) : undefined,
+      is_featured:
+        body.is_featured !== undefined ? toBool(body.is_featured) : undefined,
+      is_top: body.is_top !== undefined ? toBool(body.is_top) : undefined,
+      top_category_name: body.top_category_name ?? undefined,
+      category_order:
+        body.category_order !== undefined
+          ? Number(body.category_order)
+          : undefined,
+      blogs_count:
+        body.blogs_count !== undefined ? Number(body.blogs_count) : undefined,
+    };
 
     // Re-slugify if slug is provided
     if (body.slug !== undefined) {
       const proposed = toSlug(body.slug || "");
       patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, proposed);
-      } else if (body.title !== undefined && body.title) {
-      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(id, toSlug(body.title));
+    } else if (body.title !== undefined && body.title) {
+      patch.slug = await blogRepo.ensureUniqueSlugOnUpdate(
+        id,
+        toSlug(body.title)
+      );
     }
 
     // Handle updated featured_thumb
     if (req.files?.featured_thumb?.[0]) {
       const file = req.files.featured_thumb[0];
       const { url, error } = await uploadImageBuffer(
-        BUCKET, FOLDER,
+        BUCKET,
+        FOLDER,
         file.buffer,
         file.originalname,
         file.mimetype
       );
-      if (error) return res.status(500).json(toError(error, "Featured thumb upload failed"));
+      if (error)
+        return res
+          .status(500)
+          .json(toError(error, "Featured thumb upload failed"));
       patch.featured_thumb_url = url;
     }
 
@@ -147,12 +177,16 @@ export async function updateBlog(req, res) {
     if (req.files?.featured_image?.[0]) {
       const file = req.files.featured_image[0];
       const { url, error } = await uploadImageBuffer(
-        BUCKET, FOLDER,
+        BUCKET,
+        FOLDER,
         file.buffer,
         file.originalname,
         file.mimetype
       );
-      if (error) return res.status(500).json(toError(error, "Featured image upload failed"));
+      if (error)
+        return res
+          .status(500)
+          .json(toError(error, "Featured image upload failed"));
       patch.featured_image_url = url;
     }
 
@@ -193,5 +227,35 @@ export async function deleteBlog(req, res) {
   } catch (err) {
     console.error("Delete Blog Error:", err);
     return res.status(500).json(toError(err, "Error deleting blog"));
+  }
+}
+
+export async function uploadBlogImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: { message: "No file uploaded" } });
+    }
+
+    const file = req.file;
+    const { url, error } = await uploadImageBuffer(
+      BUCKET,
+      FOLDER,
+      file.buffer,
+      file.originalname,
+      file.mimetype
+    );
+
+    if (error) {
+      return res
+        .status(500)
+        .json({ error: { message: "Upload failed", details: error } });
+    }
+
+    return res.json({ url });
+  } catch (err) {
+    console.error("Upload Blog Image Error:", err);
+    return res
+      .status(500)
+      .json({ error: { message: "Error uploading image" } });
   }
 }

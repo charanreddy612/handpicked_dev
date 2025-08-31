@@ -98,3 +98,21 @@ export async function getBlog(id) {
     return null;
   }
 }
+
+// src/services/blogService.js
+
+export async function uploadBlogImage(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+
+  const res = await fetch("/api/blogs/upload", {
+    method: "POST",
+    body: fd,
+  });
+
+  const json = await res.json();
+  if (json?.error) {
+    throw new Error(json.error.message || "Image upload failed");
+  }
+  return json.url; // backend should return { url }
+}
