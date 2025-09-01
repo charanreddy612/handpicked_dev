@@ -1,26 +1,23 @@
 // src/components/common/SafeQuill.jsx
-import React, { lazy, Suspense, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import "quill/dist/quill.snow.css"; // ✅ correct for react-quill-new
 
-// Lazy import so it only loads on client
-const ReactQuill = lazy(() => import("react-quill-new"));
-import "react-quill/dist/quill.snow.css";
+let ReactQuill = null;
 
 export default function SafeQuill(props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      ReactQuill = require("react-quill-new"); // ✅ stable package for React 18
       setMounted(true);
     }
   }, []);
 
-  if (!mounted) {
-    return <div>Loading editor...</div>; // SSR-safe fallback
+  if (!mounted || !ReactQuill) {
+    return <div>Loading editor...</div>;
   }
 
-  return (
-    <Suspense fallback={<div>Loading editor...</div>}>
-      <ReactQuill {...props} />
-    </Suspense>
-  );
+  const Editor = ReactQuill.default || ReactQuill;
+  return <Editor {...props} />;
 }
