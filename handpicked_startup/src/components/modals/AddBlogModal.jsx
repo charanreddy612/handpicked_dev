@@ -6,7 +6,7 @@ import {
   uploadBlogImage,
 } from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
-import SafeQuill from "../components/SafeQuill";  
+import SafeQuill from "../SafeQuill.jsx";
 
 export default function AddBlogModal({ onClose, onSave }) {
   const [form, setForm] = useState({
