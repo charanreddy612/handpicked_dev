@@ -2,7 +2,7 @@
 import React, { lazy, Suspense, useEffect, useState } from "react";
 
 // Lazy import so it only loads on client
-const ReactQuill = lazy(() => import("react-quill"));
+const ReactQuill = lazy(() => import("react-quill-new"));
 import "react-quill/dist/quill.snow.css";
 
 export default function SafeQuill(props) {
