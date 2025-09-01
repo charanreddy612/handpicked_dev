@@ -1,11 +1,12 @@
 // src/components/blogs/AddBlogModal.jsx
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
-import "react-quill/dist/quill.snow.css";
-import { createBlog, fetchBlogAux, uploadBlogImage } from "../../services/blogService";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  createBlog,
+  fetchBlogAux,
+  uploadBlogImage,
+} from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
-
-// Lazy load so Quill is only imported on the client
-const ReactQuill = lazy(() => import("react-quill"));
+import SafeQuill from "../common/SafeQuill"; // ✅ our wrapper
 
 export default function AddBlogModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -39,9 +40,9 @@ export default function AddBlogModal({ onClose, onSave }) {
         setCategories(Array.isArray(aux?.categories) ? aux.categories : []);
         setAuthors(Array.isArray(aux?.authors) ? aux.authors : []);
       } catch (e) {
+        console.error("Failed to load blog aux:", e?.message || e);
         setCategories([]);
         setAuthors([]);
-        console.error("Failed to load blog aux:", e?.message || e);
       } finally {
         if (mounted) setLoadingAux(false);
       }
@@ -98,7 +99,7 @@ export default function AddBlogModal({ onClose, onSave }) {
     }
   };
 
-  // Custom Quill image handler (uses backend /api/blogs/upload)
+  // Custom image handler
   const imageHandler = () => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
@@ -205,7 +206,6 @@ export default function AddBlogModal({ onClose, onSave }) {
                 </select>
               )}
             </div>
-
             <div>
               <label>Blog Author</label>
               {loadingAux ? (
@@ -234,8 +234,7 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <Suspense fallback={<div>Loading editor...</div>}>
-            <ReactQuill
+            <SafeQuill
               ref={quillRef}
               theme="snow"
               value={form.content}
@@ -244,7 +243,6 @@ export default function AddBlogModal({ onClose, onSave }) {
               modules={modules}
               formats={formats}
             />
-            </Suspense>
           </div>
 
           {/* Meta */}

@@ -1,10 +1,13 @@
 // src/components/blogs/EditBlogModal.jsx
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
-import "react-quill/dist/quill.snow.css";
-import { getBlog, updateBlog, fetchBlogAux, uploadBlogImage} from "../../services/blogService";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  getBlog,
+  updateBlog,
+  fetchBlogAux,
+  uploadBlogImage,
+} from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
-
-const ReactQuill = lazy(() => import("react-quill"));
+import SafeQuill from "../common/SafeQuill"; // ✅ wrapper for Quill
 
 export default function EditBlogModal({ blogId, onClose, onSave }) {
   const [form, setForm] = useState(null);
@@ -118,7 +121,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     }
   };
 
-  // ✅ custom image handler now points to /api/blogs/upload
+  // ✅ custom image handler
   const imageHandler = () => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
@@ -261,8 +264,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <Suspense fallback={<div>Loading editor...</div>}>
-            <ReactQuill
+            <SafeQuill
               ref={quillRef}
               theme="snow"
               value={form.content}
@@ -271,7 +273,6 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               modules={modules}
               formats={formats}
             />
-            </Suspense>
           </div>
 
           {/* Meta fields */}
