@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -8,7 +9,7 @@ export default defineConfig({
     tailwindcss(), // ✅ Tailwind v4 plugin for Vite
   ],
   optimizeDeps: {
-    include: ["react-router-dom","react-quill"],
+    include: ["react-router-dom", "react-quill-new"], // ✅ update package name
   },
   build: {
     commonjsOptions: {
@@ -18,7 +19,10 @@ export default defineConfig({
   resolve: {
     conditions: ["import"],
     alias: {
-      quill: "quill/dist/quill.js",
+      quill: "quill/dist/quill.js", // ✅ keep if some deps import plain "quill"
     },
+  },
+  ssr: {
+    noExternal: ["react-quill-new", "quill"], // ✅ critical: prevents SSR import
   },
 });
