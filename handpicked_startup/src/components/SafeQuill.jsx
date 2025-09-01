@@ -1,25 +1,26 @@
 // src/components/common/SafeQuill.jsx
-import React, { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 
-let ReactQuill = null;
+// Lazy import so it only loads on client
+const ReactQuill = lazy(() => import("react-quill"));
+import "react-quill/dist/quill.snow.css";
 
 export default function SafeQuill(props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Load only on client
     if (typeof window !== "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      ReactQuill = require("react-quill");
-      require("react-quill/dist/quill.snow.css");
       setMounted(true);
     }
   }, []);
 
-  if (!mounted || !ReactQuill) {
-    return <div>Loading editor...</div>;
+  if (!mounted) {
+    return <div>Loading editor...</div>; // SSR-safe fallback
   }
 
-  const Editor = ReactQuill.default || ReactQuill;
-  return <Editor {...props} />;
+  return (
+    <Suspense fallback={<div>Loading editor...</div>}>
+      <ReactQuill {...props} />
+    </Suspense>
+  );
 }
