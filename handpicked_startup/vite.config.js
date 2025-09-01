@@ -8,7 +8,7 @@ export default defineConfig({
     tailwindcss(), // ✅ Tailwind v4 plugin for Vite
   ],
   optimizeDeps: {
-    include: ["react-router-dom"],
+    include: ["react-router-dom","react-quill"],
   },
   build: {
     commonjsOptions: {
@@ -17,5 +17,8 @@ export default defineConfig({
   },
   resolve: {
     conditions: ["import"],
+    alias: {
+      quill: "quill/dist/quill.js",
+    },
   },
 });
