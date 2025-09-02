@@ -165,6 +165,11 @@ export async function ensureUniqueSlugOnUpdate(id, proposedSlug) {
 }
 
 export async function countPublished() {
-  const { rows } = await supabase.query("SELECT COUNT(*) AS cnt FROM blogs WHERE is_publish = true");
-  return Number(rows[0].cnt);
+  const { count, error } = await supabase
+    .from("blogs")
+    .select("*", { count: "exact", head: true })
+    .eq("is_publish", true);
+
+  if (error) throw error;
+  return count ?? 0;
 }

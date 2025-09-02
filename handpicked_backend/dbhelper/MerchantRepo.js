@@ -94,7 +94,6 @@ export async function list({ name = "", page = 1, limit = 20 } = {}) {
     updated_at
   `;
 
-
   let countQuery = supabase
     .from("merchants")
     .select("id", { count: "exact", head: true });
@@ -226,6 +225,10 @@ export async function remove(id) {
 }
 
 export async function count() {
-  const { rows } = await supabase.query("SELECT COUNT(*) AS cnt FROM merchants");
-  return Number(rows[0].cnt);
+  const { count, error } = await supabase
+    .from("merchants")
+    .select("*", { count: "exact", head: true });
+
+  if (error) throw error;
+  return count ?? 0;
 }

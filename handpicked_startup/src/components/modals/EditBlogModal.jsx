@@ -192,6 +192,17 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     },
   };
 
+    const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "link",
+    "image",
+  ];
+  
   useEscClose(onClose);
 
   if (loading || !form) {

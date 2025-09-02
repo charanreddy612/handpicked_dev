@@ -164,6 +164,11 @@ export async function remove(id) {
 }
 
 export async function countTopCoupons() {
-  const { rows } = await supabase.query("SELECT COUNT(*) AS cnt FROM coupons WHERE is_publish = true");
-  return Number(rows[0].cnt);
+  const { count, error } = await supabase
+    .from("coupons")
+    .select("*", { count: "exact", head: true })
+    .eq("is_top", true);
+
+  if (error) throw error;
+  return count ?? 0;
 }
