@@ -144,6 +144,32 @@ export default function AddBlogModal({ onClose, onSave }) {
       maxStack: 100,
       userOnly: true,
     },
+    keyboard: {
+      bindings: {
+        undo: {
+          key: "z",
+          shortKey: true, // CTRL or CMD
+          handler: function () {
+            this.quill.history.undo();
+          },
+        },
+        redo: {
+          key: "y",
+          shortKey: true,
+          handler: function () {
+            this.quill.history.redo();
+          },
+        },
+        redoMac: {
+          key: "z",
+          shortKey: true,
+          shiftKey: true,
+          handler: function () {
+            this.quill.history.redo();
+          },
+        },
+      },
+    },
   };
 
   const formats = [
@@ -239,7 +265,7 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <div className="h-96 border rounded bg-white">
+            <div className="h-90 border rounded bg-white">
               <SafeQuill
                 ref={quillRef}
                 theme="snow"

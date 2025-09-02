@@ -51,7 +51,7 @@ app.use("/api/blog-categories", blogCategoryRoutes);
 app.use("/api/authors", authorRoutes);
 app.use("/api/merchant-categories", merchantCategoryRoutes);
 app.use("/api/imports", importRoutes);
-app.use("/api/dashboaord", dashboardRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to Handpicked Backend API" });
