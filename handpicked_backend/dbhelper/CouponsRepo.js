@@ -167,7 +167,7 @@ export async function countTopCoupons() {
   const { count, error } = await supabase
     .from("coupons")
     .select("*", { count: "exact", head: true })
-    .eq("is_top", true);
+    .eq("is_publish", true);
 
   if (error) throw error;
   return count ?? 0;

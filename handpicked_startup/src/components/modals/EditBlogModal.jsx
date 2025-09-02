@@ -152,6 +152,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
       container: [
         [{ header: [1, 2, 3, false] }],
         ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
         ["link", "image"],
         ["clean"],
       ],
@@ -160,49 +161,23 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
       },
     },
     history: {
-      delay: 1000,
-      maxStack: 100,
+      delay: 500,
+      maxStack: 200,
       userOnly: true,
-    },
-    keyboard: {
-      bindings: {
-        undo: {
-          key: "z",
-          shortKey: true, // CTRL or CMD
-          handler: function () {
-            this.quill.history.undo();
-          },
-        },
-        redo: {
-          key: "y",
-          shortKey: true,
-          handler: function () {
-            this.quill.history.redo();
-          },
-        },
-        redoMac: {
-          key: "z",
-          shortKey: true,
-          shiftKey: true,
-          handler: function () {
-            this.quill.history.redo();
-          },
-        },
-      },
     },
   };
 
-    const formats = [
+  const formats = [
     "header",
     "bold",
     "italic",
     "underline",
     "strike",
-    "list",
+    "list", // ✅ only "list" is needed, not "bullet"/"ordered"
     "link",
     "image",
   ];
-  
+
   useEscClose(onClose);
 
   if (loading || !form) {

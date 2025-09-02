@@ -21,6 +21,13 @@ export async function getSummary(req, res) {
     });
   } catch (err) {
     console.error("Dashboard summary error:", err);
-    return res.status(500).json({ error: { message: "Failed to fetch summary" } });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message:
+          err.message || err?.details || "Error fetching dashboard summary",
+        details: err,
+      },
+    });
   }
 }
