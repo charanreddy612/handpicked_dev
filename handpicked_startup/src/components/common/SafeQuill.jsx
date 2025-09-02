@@ -1,7 +1,7 @@
 // src/components/common/SafeQuill.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, forwardRef } from "react";
 
-export default function SafeQuill(props) {
+const SafeQuill = forwardRef((props, ref) => {
   const [Editor, setEditor] = useState(null);
 
   useEffect(() => {
@@ -29,5 +29,8 @@ export default function SafeQuill(props) {
   if (!Editor) {
     return <div>Loading editor...</div>; // SSR-safe placeholder
   }
-  return <Editor {...props} />;
-}
+
+  return <Editor ref={ref} {...props} />;
+});
+
+export default SafeQuill;

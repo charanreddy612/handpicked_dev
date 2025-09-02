@@ -6,7 +6,7 @@ import {
   uploadBlogImage,
 } from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
-import SafeQuill from "../SafeQuill.jsx";
+import SafeQuill from "../common/SafeQuill.jsx"; // ✅ corrected import
 
 export default function AddBlogModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -99,11 +99,11 @@ export default function AddBlogModal({ onClose, onSave }) {
     }
   };
 
-  // Custom image handler
+  // ✅ Custom image handler with ref forwarding
   const imageHandler = () => {
     const input = document.createElement("input");
-    input.setAttribute("type", "file");
-    input.setAttribute("accept", "image/*");
+    input.type = "file";
+    input.accept = "image/*";
     input.click();
 
     input.onchange = async () => {
@@ -114,9 +114,11 @@ export default function AddBlogModal({ onClose, onSave }) {
         const url = await uploadBlogImage(file);
         if (url) {
           const editor = quillRef.current?.getEditor();
-          const range = editor.getSelection(true);
-          editor.insertEmbed(range.index, "image", url);
-          editor.setSelection(range.index + 1);
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, "image", url);
+            editor.setSelection(range.index + 1);
+          }
         }
       } catch (err) {
         console.error("Image upload failed:", err);
@@ -220,10 +222,7 @@ export default function AddBlogModal({ onClose, onSave }) {
                   <option value="">Select</option>
                   {authors.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.name ||
-                        a.full_name ||
-                        a.display_name ||
-                        `Author #${a.id}`}
+                      {a.name || a.full_name || a.display_name || `Author #${a.id}`}
                     </option>
                   ))}
                 </select>
@@ -235,7 +234,7 @@ export default function AddBlogModal({ onClose, onSave }) {
           <div>
             <label>Content</label>
             <SafeQuill
-              ref={quillRef}
+              ref={quillRef} // ✅ works after forwarding
               theme="snow"
               value={form.content}
               onChange={(val) => setForm((f) => ({ ...f, content: val }))}
