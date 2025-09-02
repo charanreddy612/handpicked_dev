@@ -1,12 +1,17 @@
-// src/components/common/SafeQuill.jsx
-import React from "react";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
+// SafeQuill.jsx
+import React, { useEffect, useState } from "react";
 
 export default function SafeQuill(props) {
-  if (typeof window === "undefined") {
-    // SSR-safe: don’t load editor on server
-    return <div>Loading editor...</div>;
-  }
-  return <ReactQuill {...props} />;
+  const [Editor, setEditor] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const mod = await import("react-quill-new");
+      await import("react-quill-new/dist/quill.snow.css");
+      setEditor(() => mod.default);
+    })();
+  }, []);
+
+  if (!Editor) return <div>Loading editor...</div>;
+  return <Editor {...props} />;
 }
