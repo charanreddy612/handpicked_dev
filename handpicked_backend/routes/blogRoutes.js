@@ -28,7 +28,7 @@ router.delete("/:id", blogController.deleteBlog);
 
 router.post(
   "/upload",
-  uploadMemory.single("image"), // client sends `formData.append("image", file)`
+  uploadMemory.single("file"), // client sends `formData.append("image", file)`
   blogController.uploadBlogImage
 );
 

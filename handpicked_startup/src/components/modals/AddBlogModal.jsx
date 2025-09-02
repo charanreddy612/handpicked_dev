@@ -132,7 +132,6 @@ export default function AddBlogModal({ onClose, onSave }) {
       container: [
         [{ header: [1, 2, 3, false] }],
         ["bold", "italic", "underline", "strike"],
-        [{ list: "ordered" }, { list: "bullet" }],
         ["link", "image"],
         ["clean"],
       ],
