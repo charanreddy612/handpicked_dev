@@ -162,3 +162,8 @@ export async function remove(id) {
   if (error) throw error;
   return true;
 }
+
+export async function countTopCoupons() {
+  const { rows } = await supabase.query("SELECT COUNT(*) AS cnt FROM coupons WHERE is_publish = true");
+  return Number(rows[0].cnt);
+}

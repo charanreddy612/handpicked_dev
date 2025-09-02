@@ -1,10 +1,30 @@
+import React, { useEffect, useState } from "react";
+import { fetchDashboardSummary } from "../services/dashboardService.js";
+
 export default function DashboardSummary() {
-  // Static values for now, can be fetched dynamically later
-  const stats = [
-    { label: 'Total Stores', value: 15 },
-    { label: 'Top Coupons', value: 47 },
-    { label: 'Published Blogs', value: 12 },
-  ];
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const data = await fetchDashboardSummary();
+      setStats([
+        { label: "Total Stores", value: data.totalStores },
+        { label: "Top Coupons", value: data.topCoupons },
+        { label: "Published Blogs", value: data.publishedBlogs },
+      ]);
+    })();
+  }, []);
+
+  if (!stats) {
+    return (
+      <section className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Welcome to HandPicked CMS</h1>
+        <div className="flex flex-wrap gap-6">
+          <div className="text-gray-500">Loading summary...</div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-6xl mx-auto">

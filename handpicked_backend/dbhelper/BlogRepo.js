@@ -163,3 +163,8 @@ export async function ensureUniqueSlugOnUpdate(id, proposedSlug) {
     i++;
   }
 }
+
+export async function countPublished() {
+  const { rows } = await supabase.query("SELECT COUNT(*) AS cnt FROM blogs WHERE is_publish = true");
+  return Number(rows[0].cnt);
+}

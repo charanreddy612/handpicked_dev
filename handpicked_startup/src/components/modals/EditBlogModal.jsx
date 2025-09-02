@@ -262,15 +262,18 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <div className="h-96 overflow-y-auto border rounded">
+            <div className="h-96 border rounded bg-white">
               <SafeQuill
                 ref={quillRef}
                 theme="snow"
                 value={form.content}
                 onChange={(val) => setForm((f) => ({ ...f, content: val }))}
-                className="bg-white"
                 modules={modules}
                 formats={formats}
+                className="h-full 
+                 [&>.ql-container]:h-full 
+                 [&>.ql-editor]:h-full 
+                 [&>.ql-editor]:overflow-y-auto"
               />
             </div>
           </div>

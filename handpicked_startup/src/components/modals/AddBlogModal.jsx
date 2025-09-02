@@ -139,6 +139,11 @@ export default function AddBlogModal({ onClose, onSave }) {
         image: imageHandler,
       },
     },
+    history: {
+      delay: 1000,
+      maxStack: 100,
+      userOnly: true,
+    },
   };
 
   const formats = [
@@ -220,7 +225,10 @@ export default function AddBlogModal({ onClose, onSave }) {
                   <option value="">Select</option>
                   {authors.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.name || a.full_name || a.display_name || `Author #${a.id}`}
+                      {a.name ||
+                        a.full_name ||
+                        a.display_name ||
+                        `Author #${a.id}`}
                     </option>
                   ))}
                 </select>
@@ -231,15 +239,18 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-              <div className="h-96 overflow-y-auto border rounded">
+            <div className="h-96 border rounded bg-white">
               <SafeQuill
-                ref={quillRef} // ✅ works after forwarding
+                ref={quillRef}
                 theme="snow"
                 value={form.content}
                 onChange={(val) => setForm((f) => ({ ...f, content: val }))}
-                className="bg-white"
                 modules={modules}
                 formats={formats}
+                className="h-full 
+                 [&>.ql-container]:h-full 
+                 [&>.ql-editor]:h-full 
+                 [&>.ql-editor]:overflow-y-auto"
               />
             </div>
           </div>

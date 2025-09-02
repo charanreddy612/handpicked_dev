@@ -224,3 +224,8 @@ export async function remove(id) {
   if (error) throw error;
   return true;
 }
+
+export async function count() {
+  const { rows } = await supabase.query("SELECT COUNT(*) AS cnt FROM merchants");
+  return Number(rows[0].cnt);
+}
