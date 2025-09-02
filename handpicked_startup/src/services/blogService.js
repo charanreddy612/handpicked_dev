@@ -99,20 +99,22 @@ export async function getBlog(id) {
   }
 }
 
-// src/services/blogService.js
-
 export async function uploadBlogImage(file) {
   const fd = new FormData();
   fd.append("file", file);
 
-  const res = await fetch("/api/blogs/upload", {
-    method: "POST",
-    body: fd,
-  });
+  try {
+    const res = await http.post("/blogs/upload", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-  const json = await res.json();
-  if (json?.error) {
-    throw new Error(json.error.message || "Image upload failed");
+    if (res.data?.error) {
+      throw new Error(res.data.error.message || "Image upload failed");
+    }
+
+    return res.data.url; // backend returns { url }
+  } catch (err) {
+    console.error("Upload image failed:", err);
+    throw err;
   }
-  return json.url; // backend should return { url }
 }

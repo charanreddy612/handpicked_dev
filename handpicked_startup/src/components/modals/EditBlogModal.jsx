@@ -168,7 +168,6 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     "underline",
     "strike",
     "list",
-    "bullet",
     "link",
     "image",
   ];

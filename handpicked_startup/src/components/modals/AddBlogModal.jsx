@@ -148,7 +148,6 @@ export default function AddBlogModal({ onClose, onSave }) {
     "underline",
     "strike",
     "list",
-    "bullet",
     "link",
     "image",
   ];
