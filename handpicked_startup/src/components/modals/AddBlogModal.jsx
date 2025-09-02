@@ -231,15 +231,17 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <SafeQuill
-              ref={quillRef} // ✅ works after forwarding
-              theme="snow"
-              value={form.content}
-              onChange={(val) => setForm((f) => ({ ...f, content: val }))}
-              className="bg-white"
-              modules={modules}
-              formats={formats}
-            />
+              <div className="h-96 overflow-y-auto border rounded">
+              <SafeQuill
+                ref={quillRef} // ✅ works after forwarding
+                theme="snow"
+                value={form.content}
+                onChange={(val) => setForm((f) => ({ ...f, content: val }))}
+                className="bg-white"
+                modules={modules}
+                formats={formats}
+              />
+            </div>
           </div>
 
           {/* Meta */}

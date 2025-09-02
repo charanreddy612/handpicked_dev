@@ -262,15 +262,17 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <SafeQuill
-              ref={quillRef}
-              theme="snow"
-              value={form.content}
-              onChange={(val) => setForm((f) => ({ ...f, content: val }))}
-              className="bg-white"
-              modules={modules}
-              formats={formats}
-            />
+            <div className="h-96 overflow-y-auto border rounded">
+              <SafeQuill
+                ref={quillRef}
+                theme="snow"
+                value={form.content}
+                onChange={(val) => setForm((f) => ({ ...f, content: val }))}
+                className="bg-white"
+                modules={modules}
+                formats={formats}
+              />
+            </div>
           </div>
 
           {/* Meta fields */}
