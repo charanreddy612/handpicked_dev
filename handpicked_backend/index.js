@@ -13,6 +13,7 @@ import authorRoutes from "./routes/authorRoutes.js";
 import merchantRoutes from "./routes/merchantRoutes.js";
 import merchantCategoryRoutes from "./routes/merchantCategoryRoutes.js";
 import importRoutes from "./routes/importRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -20,10 +21,7 @@ const app = express();
 app.use(express.json({ limit: process.env.JSON_LIMIT || "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-const allowedOrigins = [
-  "https://handpickedstartup.vercel.app",
-  "https://handpickedclient.vercel.app",
-];
+const allowedOrigins = ["https://handpickedstartup.vercel.app"];
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -53,6 +51,7 @@ app.use("/api/blog-categories", blogCategoryRoutes);
 app.use("/api/authors", authorRoutes);
 app.use("/api/merchant-categories", merchantCategoryRoutes);
 app.use("/api/imports", importRoutes);
+app.use("/api/dashboaord", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to Handpicked Backend API" });

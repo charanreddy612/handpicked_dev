@@ -159,6 +159,11 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
         image: imageHandler,
       },
     },
+    history: {
+      delay: 1000,
+      maxStack: 100,
+      userOnly: true,
+    },
   };
 
   const formats = [
