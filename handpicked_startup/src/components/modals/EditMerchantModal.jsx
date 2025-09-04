@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { getMerchant, updateMerchant } from "../../services/merchantService";
+import {
+  getMerchant,
+  updateMerchant,
+  uploadMerchantImage,
+} from "../../services/merchantService";
 import useEscClose from "../hooks/useEscClose";
+import SafeQuill from "../common/SafeQuill.jsx";
 
 export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [loading, setLoading] = useState(true);
@@ -29,6 +34,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [tempQ, setTempQ] = useState("");
   const [tempA, setTempA] = useState("");
   const [tempSuggestion, setTempSuggestion] = useState("");
+  const quillRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -292,6 +298,118 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     }
   };
 
+  // ✅ Custom image handler with ref forwarding
+  const imageHandler = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const url = await uploadMerchantImage(file);
+        if (url) {
+          const editor = quillRef.current?.getEditor();
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, "image", url);
+            editor.setSelection(range.index + 1);
+          }
+        }
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Image upload failed. Please try again.");
+      }
+    };
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list", // ← only "list" here; toolbar still shows ordered/bullet
+    "link",
+    "image",
+  ];
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: { image: imageHandler },
+    },
+    history: {
+      delay: 500,
+      maxStack: 200,
+      userOnly: true,
+    },
+    keyboard: {
+      bindings: {
+        undo: {
+          key: "z",
+          shortKey: true,
+          handler() {
+            this.quill.history.undo();
+          },
+        },
+        redo: {
+          key: "y",
+          shortKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+        redoMac: {
+          key: "z",
+          shortKey: true,
+          shiftKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+      },
+    },
+  };
+
+  // ✅ Harden undo/redo with a direct keydown fallback on the editor root
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor?.();
+    if (!editor) return;
+
+    const root = editor.root;
+    const history = editor.getModule("history");
+    const isMac =
+      typeof navigator !== "undefined" &&
+      /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+    const onKeyDown = (e) => {
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      if (!ctrlOrCmd) return;
+
+      const key = e.key?.toLowerCase?.();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        history.undo();
+      } else if (key === "y" || (key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        history.redo();
+      }
+    };
+
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, [quillRef]);
+
   // close on ESC
   useEscClose(onClose);
 
@@ -484,13 +602,23 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
           </div>
           <div>
             <label className="block mb-1">Description</label>
-            <textarea
-              name="description_html"
-              value={form.description_html}
-              onChange={handleChange}
-              rows={6}
-              className="w-full border px-3 py-2 rounded"
-            />
+            <div
+              className="
+                    h-80 border rounded bg-white
+                    [&_.ql-container]:h-full
+                    [&_.ql-editor]:h-full
+                    [&_.ql-editor]:overflow-y-auto"
+            >
+              <SafeQuill
+                ref={quillRef}
+                theme="snow"
+                value={form.description_html}
+                onChange={(val) => setForm((f) => ({ ...f, description_html: val }))}
+                modules={modules}
+                formats={formats}
+                className="h-full"
+              />
+            </div>
           </div>
           <div>
             <label className="block mb-1">Table Content</label>

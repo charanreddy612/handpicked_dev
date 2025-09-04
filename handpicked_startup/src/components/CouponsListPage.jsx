@@ -68,9 +68,9 @@ export default function CouponsListPage() {
   );
 
   return (
-    <div className="cp-page">
-      <div className="cp-head">
-        <div className="cp-title">Coupon & Deals lists</div>
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xl font-semibold">Coupon & Deals lists</div>
         <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
           Add new coupon
         </button>

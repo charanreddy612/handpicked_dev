@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getMerchant } from "../../services/merchantService";
 import useEscClose from "../hooks/useEscClose";
+import DOMPurify from "dompurify";
 
 export default function ViewMerchantModal({ merchantId, onClose }) {
   const [loading, setLoading] = useState(true);
@@ -38,7 +39,6 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
       <div className="border rounded px-3 py-2">{children ?? "—"}</div>
     </div>
   );
-
 
   // close on ESC
   useEscClose(onClose);
@@ -117,9 +117,14 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
             </div>
           </Field>
           <Field label="Description">
-            <div className="prose max-w-none whitespace-pre-wrap">
-              {m?.description_html || m?.description || "—"}
-            </div>
+            <div
+              className="my-6 prose max-w-none prose-img:rounded prose-img:max-h-[400px] prose-img:object-contain"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(
+                  m?.description_html || m?.description || "—"
+                ),
+              }}
+            />
           </Field>
           <Field label="Table Content">
             <div className="prose max-w-none whitespace-pre-wrap">

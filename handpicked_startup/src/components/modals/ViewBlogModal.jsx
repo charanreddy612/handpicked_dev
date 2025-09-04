@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { getBlog } from "../../services/blogService";
 import useEscClose from "../hooks/useEscClose";
-import DOMPurify from "dompurify"; // ✅ sanitize HTML from Quill
+import DOMPurify from "dompurify";
 
 export default function ViewBlogModal({ blogId, onClose }) {
   const [blog, setBlog] = useState(null);

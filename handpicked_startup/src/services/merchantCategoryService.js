@@ -8,25 +8,46 @@ const http = axios.create({
   withCredentials: true,
 });
 
-// List with filters + pagination
-export async function listMerchantCategories({ name = "", show_home, show_deals_page, is_publish, is_header, page = 1, limit = 20 } = {}) {
+// Helper to extract a consistent error message
+function normErr(err, resData) {
+  // prefer server-provided message shape
+  const serverMsg =
+    resData?.error?.message || err?.response?.data?.error?.message;
+  return { message: serverMsg || err?.message || "Request failed" };
+}
+
+// List
+export async function listMerchantCategories(params = {}) {
   try {
-    const params = new URLSearchParams();
-    if (name) params.set("name", name);
-    if (show_home !== undefined) params.set("show_home", String(!!show_home));
-    if (show_deals_page !== undefined) params.set("show_deals_page", String(!!show_deals_page));
-    if (is_publish !== undefined) params.set("is_publish", String(!!is_publish));
-    if (is_header !== undefined) params.set("is_header", String(!!is_header));
-    params.set("page", String(page));
-    params.set("limit", String(limit));
-    const res = await http.get(`/merchant-categories?${params.toString()}`);
+    const qp = new URLSearchParams();
+    const {
+      name = "",
+      show_home,
+      show_deals_page,
+      is_publish,
+      is_header,
+      page = 1,
+      limit = 20,
+      include_store_count,
+    } = params;
+    if (name) qp.set("name", name);
+    if (show_home !== undefined) qp.set("show_home", String(!!show_home));
+    if (show_deals_page !== undefined)
+      qp.set("show_deals_page", String(!!show_deals_page));
+    if (is_publish !== undefined) qp.set("is_publish", String(!!is_publish));
+    if (is_header !== undefined) qp.set("is_header", String(!!is_header));
+    if (include_store_count) qp.set("include_store_count", "true"); // <-- used in Step 4
+    qp.set("page", String(page));
+    qp.set("limit", String(limit));
+
+    const res = await http.get(`/merchant-categories?${qp.toString()}`);
     return {
       data: Array.isArray(res.data?.data?.rows) ? res.data.data.rows : [],
       total: Number(res.data?.data?.total || 0),
       error: res.data?.error || null,
     };
   } catch (err) {
-    return { data: [], total: 0, error: { message: err.message } };
+    return { data: [], total: 0, error: normErr(err, err?.response?.data) };
   }
 }
 
@@ -40,7 +61,7 @@ export async function getMerchantCategory(id) {
   }
 }
 
-// Create (multipart)
+// Create
 export async function addMerchantCategory(formData) {
   try {
     const res = await http.post(`/merchant-categories`, formData, {
@@ -48,11 +69,11 @@ export async function addMerchantCategory(formData) {
     });
     return { data: res.data?.data ?? null, error: res.data?.error ?? null };
   } catch (err) {
-    return { data: null, error: { message: err.message } };
+    return { data: null, error: normErr(err, err?.response?.data) };
   }
 }
 
-// Update (multipart)
+// Update
 export async function updateMerchantCategory(id, formData) {
   try {
     const res = await http.put(`/merchant-categories/${id}`, formData, {
@@ -60,17 +81,17 @@ export async function updateMerchantCategory(id, formData) {
     });
     return { data: res.data?.data ?? null, error: res.data?.error ?? null };
   } catch (err) {
-    return { data: null, error: { message: err.message } };
+    return { data: null, error: normErr(err, err?.response?.data) };
   }
 }
 
-// Toggle publish
+// Toggle
 export async function toggleMerchantCategoryStatus(id) {
   try {
     const res = await http.patch(`/merchant-categories/${id}/status`);
     return { data: res.data?.data ?? null, error: res.data?.error ?? null };
   } catch (err) {
-    return { data: null, error: { message: err.message } };
+    return { data: null, error: normErr(err, err?.response?.data) };
   }
 }
 
@@ -80,6 +101,6 @@ export async function removeMerchantCategory(id) {
     const res = await http.delete(`/merchant-categories/${id}`);
     return { data: res.data?.data ?? null, error: res.data?.error ?? null };
   } catch (err) {
-    return { data: null, error: { message: err.message } };
+    return { data: null, error: normErr(err, err?.response?.data) };
   }
 }

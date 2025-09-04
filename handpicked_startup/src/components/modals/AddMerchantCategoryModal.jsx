@@ -71,19 +71,24 @@ export default function AddMerchantCategoryModal({
     if (sideBanner) fd.append("side_banner", sideBanner);
 
     try {
-      const { error } = await addMerchantCategory(fd);
-      if (error) throw new Error(error.message || "Create failed");
+      const resp = await addMerchantCategory(fd);
+      if (resp.error) {
+        alert(resp.error.message || "Create failed");
+        return;
+      }
       onSave?.();
       onClose?.();
     } catch (err) {
-      console.error("Add merchant category failed:", err?.message || err);
+      const msg = err?.message || "Request failed";
+      alert(msg);
+      console.error("Add merchant category failed:", msg || err);
     } finally {
       setSaving(false);
     }
   };
 
   // close on ESC
-useEscClose(onClose);
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

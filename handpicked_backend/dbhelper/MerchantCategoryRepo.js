@@ -172,7 +172,7 @@ export async function toggleStatus(id) {
   const next = !cur?.is_publish;
   const { data, error } = await supabase
     .from("merchant_categories")
-    .update({ is_publish: next })
+    .update({ is_publish: next, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();

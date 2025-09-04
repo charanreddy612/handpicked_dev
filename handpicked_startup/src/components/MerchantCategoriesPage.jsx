@@ -1,10 +1,9 @@
 // src/pages/merchants/MerchantCategoriesPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  // Wire these after services exist
-  // listMerchantCategories,
-  // toggleMerchantCategoryStatus,
-  // removeMerchantCategory,
+  listMerchantCategories,
+  toggleMerchantCategoryStatus,
+  removeMerchantCategory,
 } from "../services/merchantCategoryService.js";
 import ViewMerchantCategoryModal from "../components/modals/ViewMerchantCategoryModal";
 import AddMerchantCategoryModal from "../components/modals/AddMerchantCategoryModal";
@@ -31,7 +30,10 @@ export default function MerchantCategoriesPage() {
   const [viewId, setViewId] = useState(null);
   const [editId, setEditId] = useState(null);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / limit)),
+    [total, limit]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -46,10 +48,10 @@ export default function MerchantCategoriesPage() {
           is_header: filters.is_header,
           page,
           limit,
+          include_store_count: true,
         });
         setRows(Array.isArray(data) ? data : []);
         setTotal(Number(t || 0));
-
       } catch (e) {
         console.error("Failed to load merchant categories:", e?.message || e);
         if (mounted) {
@@ -109,7 +111,11 @@ export default function MerchantCategoriesPage() {
   };
 
   const BoolIcon = ({ value }) => (
-    <span className={`inline-block w-3 h-3 rounded ${value ? "bg-green-500" : "bg-gray-300"}`} />
+    <span
+      className={`inline-block w-3 h-3 rounded ${
+        value ? "bg-green-500" : "bg-gray-300"
+      }`}
+    />
   );
 
   const formatDate = (iso) => {
@@ -128,7 +134,10 @@ export default function MerchantCategoriesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Merchant Categories</h1>
-        <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={() => setShowAdd(true)}>
+        <button
+          className="bg-blue-600 text-white px-3 py-2 rounded"
+          onClick={() => setShowAdd(true)}
+        >
           + Add
         </button>
       </div>
@@ -142,14 +151,20 @@ export default function MerchantCategoriesPage() {
               <label className="block text-sm mb-1">Name</label>
               <input
                 value={filters.name}
-                onChange={(e) => setFilters((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, name: e.target.value }))
+                }
                 className="w-full border px-3 py-2 rounded"
                 placeholder="Search by name"
               />
             </div>
             <div className="flex items-center gap-4 col-span-2">
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={!!filters.show_home} onChange={onFilterCheck("show_home")} />
+                <input
+                  type="checkbox"
+                  checked={!!filters.show_home}
+                  onChange={onFilterCheck("show_home")}
+                />
                 Show Home
               </label>
               <label className="flex items-center gap-2">
@@ -161,21 +176,35 @@ export default function MerchantCategoriesPage() {
                 Show Deals Page
               </label>
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={!!filters.is_publish} onChange={onFilterCheck("is_publish")} />
+                <input
+                  type="checkbox"
+                  checked={!!filters.is_publish}
+                  onChange={onFilterCheck("is_publish")}
+                />
                 Publish
               </label>
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={!!filters.is_header} onChange={onFilterCheck("is_header")} />
+                <input
+                  type="checkbox"
+                  checked={!!filters.is_header}
+                  onChange={onFilterCheck("is_header")}
+                />
                 Is Header
               </label>
             </div>
           </div>
 
           <div className="mt-2 flex gap-2">
-            <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={applyFilters}>
+            <button
+              className="bg-blue-600 text-white px-3 py-2 rounded"
+              onClick={applyFilters}
+            >
               Apply
             </button>
-            <button className="bg-gray-200 px-3 py-2 rounded" onClick={resetFilters}>
+            <button
+              className="bg-gray-200 px-3 py-2 rounded"
+              onClick={resetFilters}
+            >
               Reset
             </button>
           </div>
@@ -228,12 +257,11 @@ export default function MerchantCategoriesPage() {
                       <button
                         className="text-blue-600 underline"
                         onClick={() => {
-                          // navigate to merchants list filtered by this category (wire later)
-                          // e.g., navigate(`/merchants?category_id=${r.id}`)
-                          alert("TODO: open merchants in this category");
+                          // TODO: navigate(`/merchants?category_id=${r.id}`)
+                          alert(`Stores in "${r.name}": ${r.store_count ?? 0}`);
                         }}
                       >
-                        Stores
+                        {r.store_count ?? 0}
                       </button>
                     </td>
                     <td className="p-2 border-b">
@@ -301,7 +329,11 @@ export default function MerchantCategoriesPage() {
           </div>
 
           <div className="flex items-center gap-1">
-            <button className="border px-2 py-1 rounded" onClick={() => setPage(1)} disabled={page === 1}>
+            <button
+              className="border px-2 py-1 rounded"
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+            >
               «
             </button>
             <button
@@ -333,9 +365,25 @@ export default function MerchantCategoriesPage() {
       </div>
 
       {/* Modals (will be provided next) */}
-      {showAdd && <AddMerchantCategoryModal onClose={() => setShowAdd(false)} onSave={onAfterMutate} />}
-      {viewId && <ViewMerchantCategoryModal categoryId={viewId} onClose={() => setViewId(null)} />}
-      {editId && <EditMerchantCategoryModal categoryId={editId} onClose={() => setEditId(null)} onSave={onAfterMutate} />} 
+      {showAdd && (
+        <AddMerchantCategoryModal
+          onClose={() => setShowAdd(false)}
+          onSave={onAfterMutate}
+        />
+      )}
+      {viewId && (
+        <ViewMerchantCategoryModal
+          categoryId={viewId}
+          onClose={() => setViewId(null)}
+        />
+      )}
+      {editId && (
+        <EditMerchantCategoryModal
+          categoryId={editId}
+          onClose={() => setEditId(null)}
+          onSave={onAfterMutate}
+        />
+      )}
     </div>
   );
 }

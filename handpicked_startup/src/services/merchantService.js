@@ -79,3 +79,23 @@ export async function removeMerchant(id) {
     return { data: null, error: { message: err.message } };
   }
 }
+
+export async function uploadMerchantImage(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+
+  try {
+    const res = await http.post("/merchants/upload", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (res.data?.error) {
+      throw new Error(res.data.error.message || "Image upload failed");
+    }
+
+    return res.data.url; // backend returns { url }
+  } catch (err) {
+    console.error("Upload image failed:", err);
+    throw err;
+  }
+}

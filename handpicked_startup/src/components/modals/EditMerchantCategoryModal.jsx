@@ -24,6 +24,10 @@ export default function EditMerchantCategoryModal({
   const [tempTopUrl, setTempTopUrl] = useState(null);
   const [tempSideUrl, setTempSideUrl] = useState(null);
 
+  const [removeThumb, setRemoveThumb] = useState(false);
+  const [removeTop, setRemoveTop] = useState(false);
+  const [removeSide, setRemoveSide] = useState(false);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -99,6 +103,7 @@ export default function EditMerchantCategoryModal({
   };
 
   const pickThumb = (file) => {
+    setRemoveThumb(false);
     setThumb(file);
     if (tempThumbUrl) URL.revokeObjectURL(tempThumbUrl);
     if (file) {
@@ -108,6 +113,7 @@ export default function EditMerchantCategoryModal({
     }
   };
   const pickTop = (file) => {
+    setRemoveTop(false);
     setTopBanner(file);
     if (tempTopUrl) URL.revokeObjectURL(tempTopUrl);
     if (file) {
@@ -117,6 +123,7 @@ export default function EditMerchantCategoryModal({
     }
   };
   const pickSide = (file) => {
+    setRemoveSide(false);
     setSideBanner(file);
     if (tempSideUrl) URL.revokeObjectURL(tempSideUrl);
     if (file) {
@@ -124,6 +131,22 @@ export default function EditMerchantCategoryModal({
       setTempSideUrl(url);
       setForm((f) => ({ ...f, side_banner_url: url }));
     }
+  };
+
+  const clearThumb = () => {
+    setThumb(null);
+    setRemoveThumb(true);
+    setForm((f) => ({ ...f, thumb_url: "" }));
+  };
+  const clearTop = () => {
+    setTopBanner(null);
+    setRemoveTop(true);
+    setForm((f) => ({ ...f, top_banner_url: "" }));
+  };
+  const clearSide = () => {
+    setSideBanner(null);
+    setRemoveSide(true);
+    setForm((f) => ({ ...f, side_banner_url: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -149,19 +172,26 @@ export default function EditMerchantCategoryModal({
     if (thumb) fd.append("thumb", thumb);
     if (topBanner) fd.append("top_banner", topBanner);
     if (sideBanner) fd.append("side_banner", sideBanner);
+    if (removeThumb) fd.append("remove_thumb", "true");
+    if (removeTop) fd.append("remove_top_banner", "true");
+    if (removeSide) fd.append("remove_side_banner", "true");
 
     try {
-      const { error } = await updateMerchantCategory(categoryId, fd);
-      if (error) throw new Error(error.message || "Update failed");
+      const resp = await updateMerchantCategory(categoryId, fd);
+      if (resp.error) {
+        alert(resp.error.message || "Update failed");
+        return;
+      }
       onSave?.();
       onClose?.();
     } catch (err) {
-      console.error("Update merchant category failed:", err?.message || err);
+      const msg = err?.message || "Request failed";
+      alert(msg);
+      console.error("Update merchant category failed:", msg || err);
     } finally {
       setSaving(false);
     }
   };
-
 
   // close on ESC
   useEscClose(onClose);
@@ -286,6 +316,15 @@ export default function EditMerchantCategoryModal({
                 accept="image/*"
                 onChange={(e) => pickThumb(e.target.files?.[0] || null)}
               />
+              {form.thumb_url && (
+                <button
+                  type="button"
+                  className="border px-2 py-1 rounded"
+                  onClick={clearThumb}
+                >
+                  Remove
+                </button>
+              )}
             </div>
 
             <div>
@@ -306,6 +345,15 @@ export default function EditMerchantCategoryModal({
                 accept="image/*"
                 onChange={(e) => pickTop(e.target.files?.[0] || null)}
               />
+              {form.top_banner_url && (
+                <button
+                  type="button"
+                  className="border px-2 py-1 rounded"
+                  onClick={clearTop}
+                >
+                  Remove
+                </button>
+              )}
               <input
                 name="top_banner_link_url"
                 value={form.top_banner_link_url}
@@ -333,6 +381,15 @@ export default function EditMerchantCategoryModal({
                 accept="image/*"
                 onChange={(e) => pickSide(e.target.files?.[0] || null)}
               />
+              {form.side_banner_url && (
+                <button
+                  type="button"
+                  className="border px-2 py-1 rounded"
+                  onClick={clearSide}
+                >
+                  Remove
+                </button>
+              )}
               <input
                 name="side_banner_link_url"
                 value={form.side_banner_link_url}

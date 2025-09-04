@@ -20,7 +20,7 @@ function parseToPath(urlOrPath, fallbackBucket) {
     if (m) {
       // If the URL's bucket matches the provided bucket, use its path portion.
       const urlBucket = m[1];
-      const path = m[1];
+      const path = m[2];
       if (!fallbackBucket || urlBucket === fallbackBucket) return path;
       // If buckets differ, still return the path; caller controls bucket param.
       return path;
@@ -45,7 +45,9 @@ function parseToPath(urlOrPath, fallbackBucket) {
  */
 export async function deleteFilesByUrls(bucket, urlsOrPaths = []) {
   if (!bucket || typeof bucket !== "string") {
-    throw new Error("deleteFilesByUrls: 'bucket' is required and must be a string.");
+    throw new Error(
+      "deleteFilesByUrls: 'bucket' is required and must be a string."
+    );
   }
   if (!Array.isArray(urlsOrPaths) || urlsOrPaths.length === 0) {
     return [];
@@ -68,7 +70,10 @@ export async function deleteFilesByUrls(bucket, urlsOrPaths = []) {
     }
     return [{ ok: true, count: paths.length }];
   } catch (err) {
-    console.error(`deleteFilesByUrls: exception for bucket=${bucket}`, err?.message || err);
+    console.error(
+      `deleteFilesByUrls: exception for bucket=${bucket}`,
+      err?.message || err
+    );
     return [{ ok: false, error: err }];
   }
 }

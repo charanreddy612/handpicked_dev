@@ -39,4 +39,9 @@ router.patch("/:id/status", merchantController.updateMerchantStatus);
 // Delete
 router.delete("/:id", merchantController.deleteMerchant);
 
+router.post(
+  "/upload",
+  uploadMemory.single("file"), // client sends `formData.append("image", file)`
+  merchantController.uploadBlogImage
+);
 export default router;

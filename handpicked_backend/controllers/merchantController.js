@@ -31,7 +31,10 @@ export async function listMerchants(req, res) {
   } catch (err) {
     return res.status(500).json({
       data: null,
-      error: { message: "Error listing merchants", details: err?.message || err },
+      error: {
+        message: "Error listing merchants",
+        details: err?.message || err,
+      },
     });
   }
 }
@@ -44,7 +47,10 @@ export async function getMerchant(req, res) {
   } catch (err) {
     return res.status(500).json({
       data: null,
-      error: { message: "Error fetching merchant", details: err?.message || err },
+      error: {
+        message: "Error fetching merchant",
+        details: err?.message || err,
+      },
     });
   }
 }
@@ -108,20 +114,56 @@ export async function createMerchant(req, res) {
     // Images (optional)
     if (f.logo?.[0]) {
       const file = f.logo;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Logo upload failed", details: error } });
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Logo upload failed", details: error },
+          });
       toInsert.logo_url = url;
     }
     if (f.top_banner?.[0]) {
       const file = f.top_banner;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Top banner upload failed", details: error } });
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Top banner upload failed", details: error },
+          });
       toInsert.top_banner_url = url;
     }
     if (f.side_banner?.[0]) {
       const file = f.side_banner;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Side banner upload failed", details: error } });
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Side banner upload failed", details: error },
+          });
       toInsert.side_banner_url = url;
     }
 
@@ -130,7 +172,10 @@ export async function createMerchant(req, res) {
   } catch (err) {
     return res.status(500).json({
       data: null,
-      error: { message: "Error creating merchant", details: err?.message || err },
+      error: {
+        message: "Error creating merchant",
+        details: err?.message || err,
+      },
     });
   }
 }
@@ -146,15 +191,30 @@ export async function updateMerchant(req, res) {
       name: b.name ?? undefined,
 
       // site + tracking
-      web_url: b.web_url !== undefined ? b.web_url : b.website !== undefined ? b.website : undefined,
+      web_url:
+        b.web_url !== undefined
+          ? b.web_url
+          : b.website !== undefined
+          ? b.website
+          : undefined,
       aff_url: b.aff_url !== undefined ? b.aff_url : undefined,
-      tracker_lock: b.tracker_lock !== undefined ? toBool(b.tracker_lock) : undefined,
+      tracker_lock:
+        b.tracker_lock !== undefined ? toBool(b.tracker_lock) : undefined,
 
       // headings / SEO
       h1keyword: b.h1keyword !== undefined ? b.h1keyword : undefined,
-      meta_title: b.seo_title !== undefined ? b.seo_title : b.meta_title !== undefined ? b.meta_title : undefined,
+      meta_title:
+        b.seo_title !== undefined
+          ? b.seo_title
+          : b.meta_title !== undefined
+          ? b.meta_title
+          : undefined,
       meta_keywords:
-        b.seo_keywords !== undefined ? b.seo_keywords : b.meta_keywords !== undefined ? b.meta_keywords : undefined,
+        b.seo_keywords !== undefined
+          ? b.seo_keywords
+          : b.meta_keywords !== undefined
+          ? b.meta_keywords
+          : undefined,
       meta_description:
         b.seo_description !== undefined
           ? b.seo_description
@@ -163,39 +223,87 @@ export async function updateMerchant(req, res) {
           : undefined,
 
       // content blocks
-      side_description_html: b.side_description_html !== undefined ? b.side_description_html : undefined,
+      side_description_html:
+        b.side_description_html !== undefined
+          ? b.side_description_html
+          : undefined,
       description_html:
-        b.description_html !== undefined ? b.description_html : b.description !== undefined ? b.description : undefined,
-      table_content_html: b.table_content_html !== undefined ? b.table_content_html : undefined,
-      ads_description_html: b.ads_description_html !== undefined ? b.ads_description_html : undefined,
-      ads_description_label: b.ads_description_label !== undefined ? b.ads_description_label : undefined,
+        b.description_html !== undefined
+          ? b.description_html
+          : b.description !== undefined
+          ? b.description
+          : undefined,
+      table_content_html:
+        b.table_content_html !== undefined ? b.table_content_html : undefined,
+      ads_description_html:
+        b.ads_description_html !== undefined
+          ? b.ads_description_html
+          : undefined,
+      ads_description_label:
+        b.ads_description_label !== undefined
+          ? b.ads_description_label
+          : undefined,
 
       // flags
       sidebar: b.sidebar !== undefined ? toBool(b.sidebar) : undefined,
       home: b.home !== undefined ? toBool(b.home) : undefined,
-      ads_block_all: b.ads_block_all !== undefined ? toBool(b.ads_block_all) : undefined,
-      ads_block_banners: b.ads_block_banners !== undefined ? toBool(b.ads_block_banners) : undefined,
+      ads_block_all:
+        b.ads_block_all !== undefined ? toBool(b.ads_block_all) : undefined,
+      ads_block_banners:
+        b.ads_block_banners !== undefined
+          ? toBool(b.ads_block_banners)
+          : undefined,
       is_header: b.is_header !== undefined ? toBool(b.is_header) : undefined,
       deals_home: b.deals_home !== undefined ? toBool(b.deals_home) : undefined,
       tag_home: b.tag_home !== undefined ? toBool(b.tag_home) : undefined,
-      amazon_store: b.amazon_store !== undefined ? toBool(b.amazon_store) : undefined,
+      amazon_store:
+        b.amazon_store !== undefined ? toBool(b.amazon_store) : undefined,
       active: b.active !== undefined ? toBool(b.active) : undefined,
-      show_at_search_bar: b.show_at_search_bar !== undefined ? toBool(b.show_at_search_bar) : undefined,
-      extension_active: b.extension_active !== undefined ? toBool(b.extension_active) : undefined,
-      extension_mandatory: b.extension_mandatory !== undefined ? toBool(b.extension_mandatory) : undefined,
-      is_header_2: b.is_header_2 !== undefined ? toBool(b.is_header_2) : undefined,
+      show_at_search_bar:
+        b.show_at_search_bar !== undefined
+          ? toBool(b.show_at_search_bar)
+          : undefined,
+      extension_active:
+        b.extension_active !== undefined
+          ? toBool(b.extension_active)
+          : undefined,
+      extension_mandatory:
+        b.extension_mandatory !== undefined
+          ? toBool(b.extension_mandatory)
+          : undefined,
+      is_header_2:
+        b.is_header_2 !== undefined ? toBool(b.is_header_2) : undefined,
 
       // radios
-      coupon_icon_visibility: b.coupon_icon_visibility !== undefined ? b.coupon_icon_visibility : undefined,
-      store_status_visibility: b.store_status_visibility !== undefined ? b.store_status_visibility : undefined,
+      coupon_icon_visibility:
+        b.coupon_icon_visibility !== undefined
+          ? b.coupon_icon_visibility
+          : undefined,
+      store_status_visibility:
+        b.store_status_visibility !== undefined
+          ? b.store_status_visibility
+          : undefined,
 
       // arrays (JSON strings)
-      category_names: b.category_names !== undefined ? parseJSON(b.category_names, []) : undefined,
-      brand_categories: b.brand_categories !== undefined ? parseJSON(b.brand_categories, []) : undefined,
-      coupon_h2_blocks: b.coupon_h2_blocks !== undefined ? parseJSON(b.coupon_h2_blocks, []) : undefined,
-      coupon_h3_blocks: b.coupon_h3_blocks !== undefined ? parseJSON(b.coupon_h3_blocks, []) : undefined,
+      category_names:
+        b.category_names !== undefined
+          ? parseJSON(b.category_names, [])
+          : undefined,
+      brand_categories:
+        b.brand_categories !== undefined
+          ? parseJSON(b.brand_categories, [])
+          : undefined,
+      coupon_h2_blocks:
+        b.coupon_h2_blocks !== undefined
+          ? parseJSON(b.coupon_h2_blocks, [])
+          : undefined,
+      coupon_h3_blocks:
+        b.coupon_h3_blocks !== undefined
+          ? parseJSON(b.coupon_h3_blocks, [])
+          : undefined,
       faqs: b.faqs !== undefined ? parseJSON(b.faqs, []) : undefined,
-      suggestions: b.suggestions !== undefined ? parseJSON(b.suggestions, []) : undefined,
+      suggestions:
+        b.suggestions !== undefined ? parseJSON(b.suggestions, []) : undefined,
     };
 
     // Slug handling
@@ -213,22 +321,56 @@ export async function updateMerchant(req, res) {
     // New files overwrite
     if (f.logo?.[0]) {
       const file = f.logo;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Logo upload failed", details: error } });
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Logo upload failed", details: error },
+          });
       patch.logo_url = url;
     }
     if (f.top_banner?.[0]) {
       const file = f.top_banner;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
       if (error)
-        return res.status(500).json({ data: null, error: { message: "Top banner upload failed", details: error } });
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Top banner upload failed", details: error },
+          });
       patch.top_banner_url = url;
     }
     if (f.side_banner?.[0]) {
       const file = f.side_banner;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
       if (error)
-        return res.status(500).json({ data: null, error: { message: "Side banner upload failed", details: error } });
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Side banner upload failed", details: error },
+          });
       patch.side_banner_url = url;
     }
 
@@ -237,7 +379,10 @@ export async function updateMerchant(req, res) {
   } catch (err) {
     return res.status(500).json({
       data: null,
-      error: { message: "Error updating merchant", details: err?.message || err },
+      error: {
+        message: "Error updating merchant",
+        details: err?.message || err,
+      },
     });
   }
 }
@@ -250,7 +395,10 @@ export async function updateMerchantStatus(req, res) {
   } catch (err) {
     return res.status(500).json({
       data: null,
-      error: { message: "Error updating merchant status", details: err?.message || err },
+      error: {
+        message: "Error updating merchant status",
+        details: err?.message || err,
+      },
     });
   }
 }
@@ -260,23 +408,67 @@ export async function deleteMerchant(req, res) {
     const { id } = req.params;
 
     const m = await merchantRepo.getById(id);
-    if (!m) return res.status(404).json({ data: null, error: { message: "Merchant not found" } });
+    if (!m)
+      return res
+        .status(404)
+        .json({ data: null, error: { message: "Merchant not found" } });
 
-    const urls = [m.logo_url, m.top_banner_url, m.side_banner_url].filter(Boolean);
+    const urls = [m.logo_url, m.top_banner_url, m.side_banner_url].filter(
+      Boolean
+    );
     try {
       if (urls.length) await deleteFilesByUrls(BUCKET, urls);
     } catch (fileErr) {
-      console.error("Merchant file deletion failed:", fileErr?.message || fileErr);
+      console.error(
+        "Merchant file deletion failed:",
+        fileErr?.message || fileErr
+      );
     }
 
     const ok = await merchantRepo.remove(id);
-    if (!ok) return res.status(500).json({ data: null, error: { message: "Failed to delete merchant" } });
+    if (!ok)
+      return res
+        .status(500)
+        .json({ data: null, error: { message: "Failed to delete merchant" } });
 
     return res.json({ data: { id, deleted_files: urls.length }, error: null });
   } catch (err) {
     return res.status(500).json({
       data: null,
-      error: { message: "Error deleting merchant", details: err?.message || err },
+      error: {
+        message: "Error deleting merchant",
+        details: err?.message || err,
+      },
     });
+  }
+}
+
+export async function uploadBlogImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: { message: "No file uploaded" } });
+    }
+
+    const file = req.file;
+    const { url, error } = await uploadImageBuffer(
+      BUCKET,
+      FOLDER,
+      file.buffer,
+      file.originalname,
+      file.mimetype
+    );
+
+    if (error) {
+      return res
+        .status(500)
+        .json({ error: { message: "Upload failed", details: error } });
+    }
+
+    return res.json({ url });
+  } catch (err) {
+    console.error("Upload Merchant Image Error:", err);
+    return res
+      .status(500)
+      .json({ error: { message: "Error uploading image" } });
   }
 }
