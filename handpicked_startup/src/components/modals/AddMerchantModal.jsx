@@ -1,5 +1,5 @@
 // src/components/merchants/AddMerchantModal.jsx
-import React, { useMemo, useState } from "react";
+import React, { useState, useRef } from "react";
 import { addMerchant, uploadMerchantImage } from "../../services/merchantService";
 import useEscClose from "../hooks/useEscClose";
 import SafeQuill from "../common/SafeQuill.jsx";
