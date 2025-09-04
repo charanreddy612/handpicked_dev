@@ -127,6 +127,17 @@ export default function AddBlogModal({ onClose, onSave }) {
     };
   };
 
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list", // ← only "list" here; toolbar still shows ordered/bullet
+    "link",
+    "image",
+  ];
+
   const modules = {
     toolbar: {
       container: [
@@ -136,27 +147,40 @@ export default function AddBlogModal({ onClose, onSave }) {
         ["link", "image"],
         ["clean"],
       ],
-      handlers: {
-        image: imageHandler,
-      },
+      handlers: { image: imageHandler },
     },
     history: {
       delay: 500,
       maxStack: 200,
       userOnly: true,
     },
+    keyboard: {
+      bindings: {
+        undo: {
+          key: "z",
+          shortKey: true,
+          handler() {
+            this.quill.history.undo();
+          },
+        },
+        redo: {
+          key: "y",
+          shortKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+        redoMac: {
+          key: "z",
+          shortKey: true,
+          shiftKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+      },
+    },
   };
-
-  const formats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "list", // ✅ only "list" is needed, not "bullet"/"ordered"
-    "link",
-    "image",
-  ];
 
   useEscClose(onClose);
 
@@ -240,7 +264,13 @@ export default function AddBlogModal({ onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <div className="h-90 border rounded bg-white">
+            <div
+              className="
+                    h-96 border rounded bg-white
+                    [&_.ql-container]:h-full
+                    [&_.ql-editor]:h-full
+                    [&_.ql-editor]:overflow-y-auto"
+            >
               <SafeQuill
                 ref={quillRef}
                 theme="snow"
@@ -248,14 +278,10 @@ export default function AddBlogModal({ onClose, onSave }) {
                 onChange={(val) => setForm((f) => ({ ...f, content: val }))}
                 modules={modules}
                 formats={formats}
-                className="h-full 
-                 [&>.ql-container]:h-full 
-                 [&>.ql-editor]:h-full 
-                 [&>.ql-editor]:overflow-y-auto"
+                className="h-full"
               />
             </div>
           </div>
-
           {/* Meta */}
           <div className="grid grid-cols-3 gap-4">
             <div>
