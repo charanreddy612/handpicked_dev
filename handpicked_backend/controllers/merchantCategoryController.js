@@ -2,6 +2,7 @@
 import * as mcRepo from "../dbhelper/MerchantCategoryRepo.js";
 import { uploadImageBuffer } from "../services/storageService.js";
 import { deleteFilesByUrls } from "../services/deleteFilesByUrl.js";
+import { supabase } from "../dbhelper/dbclient.js";
 
 const BUCKET = process.env.UPLOAD_BUCKET || "merchant-categories-images";
 const FOLDER = "merchant-categories";
