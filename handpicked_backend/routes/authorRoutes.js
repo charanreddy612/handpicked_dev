@@ -8,4 +8,5 @@ router.get("/:id", authorController.getAuthor);
 router.post("/", authorController.createAuthor);
 router.put("/:id", authorController.updateAuthor);
 router.patch("/:id/status", authorController.updateAuthorStatus);
+router.delete("/:id", authorController.deleteAuthor);
 export default router;
