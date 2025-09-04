@@ -182,6 +182,35 @@ export default function AddBlogModal({ onClose, onSave }) {
     },
   };
 
+  // ✅ Harden undo/redo with a direct keydown fallback on the editor root
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor?.();
+    if (!editor) return;
+
+    const root = editor.root;
+    const history = editor.getModule("history");
+    const isMac =
+      typeof navigator !== "undefined" &&
+      /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+    const onKeyDown = (e) => {
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      if (!ctrlOrCmd) return;
+
+      const key = e.key?.toLowerCase?.();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        history.undo();
+      } else if (key === "y" || (key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        history.redo();
+      }
+    };
+
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, [quillRef]);
+
   useEscClose(onClose);
 
   return (
@@ -266,7 +295,7 @@ export default function AddBlogModal({ onClose, onSave }) {
             <label>Content</label>
             <div
               className="
-                    h-96 border rounded bg-white
+                    h-80 border rounded bg-white
                     [&_.ql-container]:h-full
                     [&_.ql-editor]:h-full
                     [&_.ql-editor]:overflow-y-auto"
@@ -282,6 +311,7 @@ export default function AddBlogModal({ onClose, onSave }) {
               />
             </div>
           </div>
+
           {/* Meta */}
           <div className="grid grid-cols-3 gap-4">
             <div>

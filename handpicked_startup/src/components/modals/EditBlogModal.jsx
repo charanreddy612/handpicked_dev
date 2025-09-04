@@ -153,7 +153,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
     "italic",
     "underline",
     "strike",
-    "list", // ← only "list" here; toolbar still shows ordered/bullet
+    "list",
     "link",
     "image",
   ];
@@ -201,6 +201,35 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
       },
     },
   };
+
+  // ✅ Direct keydown fallback to guarantee undo/redo
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor?.();
+    if (!editor) return;
+
+    const root = editor.root;
+    const history = editor.getModule("history");
+    const isMac =
+      typeof navigator !== "undefined" &&
+      /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+    const onKeyDown = (e) => {
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      if (!ctrlOrCmd) return;
+
+      const key = e.key?.toLowerCase?.();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        history.undo();
+      } else if (key === "y" || (key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        history.redo();
+      }
+    };
+
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, [quillRef]);
 
   useEscClose(onClose);
 
@@ -293,7 +322,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           <div>
             <label>Content</label>
             <div
-              className="h-96 border rounded bg-white
+              className="h-80 border rounded bg-white
                         [&_.ql-container]:h-full
                         [&_.ql-editor]:h-full
                         [&_.ql-editor]:overflow-y-auto"
@@ -309,6 +338,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
               />
             </div>
           </div>
+
           {/* Meta fields */}
           <div className="grid grid-cols-3 gap-4">
             <div>
