@@ -1,6 +1,9 @@
 // src/components/merchants/AddMerchantModal.jsx
-import React, { useState, useRef } from "react";
-import { addMerchant, uploadMerchantImage } from "../../services/merchantService";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  addMerchant,
+  uploadMerchantImage,
+} from "../../services/merchantService";
 import useEscClose from "../hooks/useEscClose";
 import SafeQuill from "../common/SafeQuill.jsx";
 
@@ -590,7 +593,9 @@ export default function AddMerchantModal({ onClose, onSave }) {
                 ref={quillRef}
                 theme="snow"
                 value={form.description_html}
-                onChange={(val) => setForm((f) => ({ ...f, description_html: val }))}
+                onChange={(val) =>
+                  setForm((f) => ({ ...f, description_html: val }))
+                }
                 modules={modules}
                 formats={formats}
                 className="h-full"
