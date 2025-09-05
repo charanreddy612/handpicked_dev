@@ -104,3 +104,22 @@ export async function removeMerchantCategory(id) {
     return { data: null, error: normErr(err, err?.response?.data) };
   }
 }
+
+// Get all categories with only id and name (for dropdowns)
+export async function getAllCategories() {
+  try {
+    const res = await fetch(`/api/merchant-categories?limit=1000`); // set high limit or API-side "all"
+    if (!res.ok) {
+      throw new Error("Failed to fetch categories");
+    }
+
+    const data = await res.json();
+    return (data?.items || data)?.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+    }));
+  } catch (err) {
+    console.error("Error in getAllCategories:", err);
+    return [];
+  }
+}

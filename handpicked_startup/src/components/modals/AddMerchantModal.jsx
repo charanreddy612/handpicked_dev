@@ -4,6 +4,7 @@ import {
   addMerchant,
   uploadMerchantImage,
 } from "../../services/merchantService";
+import {getAllCategories} from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 import SafeQuill from "../common/SafeQuill.jsx";
 
@@ -44,7 +45,11 @@ export default function AddMerchantModal({ onClose, onSave }) {
   const [logo, setLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
 
-  const [categories, setCategories] = useState([]); // inline-added
+  // --- categories state (selected) and all available categories (from DB) ---
+  const [categories, setCategories] = useState([]); // selected category names (was inline-added)
+  const [allCategories, setAllCategories] = useState([]); // fetched from backend
+  const [loadingCats, setLoadingCats] = useState(true);
+
   const [brandCategories, setBrandCategories] = useState([]); // inline-added
 
   const [couponH2Blocks, setCouponH2Blocks] = useState([]); // [{heading, description}]
@@ -54,6 +59,38 @@ export default function AddMerchantModal({ onClose, onSave }) {
 
   const [saving, setSaving] = useState(false);
   const quillRef = useRef(null);
+
+  // Fetch available categories from backend once
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingCats(true);
+        const res = await getAllCategories();
+        if (!mounted) return;
+        if (!res.ok) {
+          console.error("Failed to load categories", res.status);
+          setAllCategories([]);
+          return;
+        }
+        const json = await res.json();
+        // adapt to your API shape: prefer json.data array, fallback to json
+        const raw = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : json?.categories ?? [];
+        const normalized = raw.map((c) =>
+          typeof c === "string" ? c : c.name ?? c.category_name ?? String(c.id)
+        );
+        setAllCategories(normalized);
+      } catch (err) {
+        console.error("Could not fetch categories:", err);
+        setAllCategories([]);
+      } finally {
+        if (mounted) setLoadingCats(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -72,15 +109,43 @@ export default function AddMerchantModal({ onClose, onSave }) {
     }
   };
 
-  const addCategory = () => {
-    const v = form.category_input.trim();
+  // Add typed category to selected categories (and clear input)
+  const addCategory = async () => {
+    const v = String(form.category_input || "").trim();
     if (!v) return;
-    if (!categories.includes(v)) setCategories((arr) => [...arr, v]);
+    if (!categories.includes(v)) {
+      setCategories((arr) => [...arr, v]);
+    }
     setForm((f) => ({ ...f, category_input: "" }));
+
+    // Optional: persist new category to backend and add to allCategories
+    // Uncomment & edit endpoint if you'd like to create categories server-side:
+    /*
+    try {
+      const resp = await fetch('/api/merchant-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: v })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const cname = data?.data?.name ?? v;
+        setAllCategories(prev => prev.includes(cname) ? prev : [...prev, cname]);
+      }
+    } catch (err) {
+      console.warn('persist category failed (non-fatal):', err);
+    }
+    */
   };
 
   const removeCategory = (v) => {
     setCategories((arr) => arr.filter((x) => x !== v));
+  };
+
+  // Handler for native <select multiple>
+  const onSelectChange = (e) => {
+    const opts = Array.from(e.target.selectedOptions || []).map((o) => o.value);
+    setCategories(opts);
   };
 
   const [brandCategoryInput, setBrandCategoryInput] = useState("");
@@ -431,9 +496,34 @@ export default function AddMerchantModal({ onClose, onSave }) {
             />
           </div>
 
-          {/* Category + Add category */}
+          {/* Category + Add category (REPLACED: native multi-select + chips + typed add) */}
           <div>
             <label className="block mb-1">Category</label>
+
+            {/* Multi-select dropdown */}
+            <div className="mb-2">
+              {loadingCats ? (
+                <div className="text-sm text-gray-500">Loading categories…</div>
+              ) : (
+                <select
+                  multiple
+                  value={categories}
+                  onChange={onSelectChange}
+                  className="w-full border px-3 py-2 rounded h-36"
+                >
+                  {allCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Hold Ctrl/Cmd to select multiple. Selected items shown below.
+              </p>
+            </div>
+
+            {/* keep typed add UX */}
             <div className="flex gap-2">
               <input
                 name="category_input"
@@ -450,18 +540,21 @@ export default function AddMerchantModal({ onClose, onSave }) {
                 + Add
               </button>
             </div>
+
+            {/* Selected chips */}
             {categories.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {categories.map((c) => (
                   <span
                     key={c}
-                    className="px-2 py-1 bg-gray-100 rounded border"
+                    className="px-2 py-1 bg-gray-100 rounded border flex items-center gap-2"
                   >
-                    {c}
+                    <span className="text-sm">{c}</span>
                     <button
                       type="button"
-                      className="ml-2 text-red-600"
+                      className="ml-1 text-red-600 hover:text-red-800"
                       onClick={() => removeCategory(c)}
+                      aria-label={`Remove category ${c}`}
                     >
                       ×
                     </button>
@@ -646,10 +739,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
             {brandCategories.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {brandCategories.map((c) => (
-                  <span
-                    key={c}
-                    className="px-2 py-1 bg-gray-100 rounded border"
-                  >
+                  <span key={c} className="px-2 py-1 bg-gray-100 rounded border">
                     {c}
                     <button
                       type="button"
