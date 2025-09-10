@@ -18,24 +18,27 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 dotenv.config();
 const app = express();
 
-app.use(express.json({ limit: process.env.JSON_LIMIT || "1mb" }));
-app.use(express.urlencoded({ extended: true }));
-
 const allowedOrigins = ["https://handpickedstartup.vercel.app"];
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error("Not allowed by CORS"));
+      return callback(null, false);
     },
-    methods: ["GET", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"],
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // set to false if you don’t use cookies/credentials
+    credentials: true,
+    preflightContinue: false,
   })
 );
-app.options("/api/auth/login", cors());
+app.options("*", cors());
+// app.options("/api/auth/login", cors());
+
+app.use(express.json({ limit: process.env.JSON_LIMIT || "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
