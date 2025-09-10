@@ -18,26 +18,6 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 dotenv.config();
 const app = express();
 
-function normalizeRoutePath(p = "") {
-  if (!p) return "/";
-  try {
-    const u = new URL(p);
-    return u.pathname || "/";
-  } catch (_) {
-    const s = String(p).trim();
-    return s.startsWith("/") ? s : `/${s.replace(/^:+/, "")}`;
-  }
-}
-const _origUse = app.use.bind(app);
-app.use = function (path, ...rest) {
-  if (typeof path === "string" && /:\/\//.test(path)) {
-    console.warn("[startup] Detected full-URL used as route mount:", path);
-    path = normalizeRoutePath(path);
-  }
-  if (typeof path === "string" && path === "") path = "/";
-  return _origUse(path, ...rest);
-};
-
 const allowedOrigins = ["https://handpickedstartup.vercel.app"];
 app.use(
   cors({
@@ -54,8 +34,7 @@ app.use(
     preflightContinue: false,
   })
 );
-app.options("*", cors());
-// app.options("/api/auth/login", cors());
+app.options("/api/auth/login", cors());
 
 app.use(express.json({ limit: process.env.JSON_LIMIT || "1mb" }));
 app.use(express.urlencoded({ extended: true }));
