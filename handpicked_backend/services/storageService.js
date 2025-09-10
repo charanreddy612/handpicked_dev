@@ -9,6 +9,16 @@ import { supabase } from "../dbhelper/dbclient.js";
  * @param {string} mimetype - MIME type
  */
 export async function uploadImageBuffer(bucket, folder, buffer, filename, mimetype) {
+    // basic validation
+    if (!buffer) {
+      return { url: null, error: new Error("uploadImageBuffer: missing buffer"), path: null, size: 0 };
+    }
+
+    // Buffer or ArrayBuffer-like
+    const size = typeof buffer.byteLength === "number" ? buffer.byteLength : (Buffer.isBuffer(buffer) ? buffer.length : null);
+    if (!size || size === 0) {
+      return { url: null, error: new Error("uploadImageBuffer: buffer is empty (0 bytes)"), path: null, size: 0 };
+    }
   const now = new Date();
   const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
   const safeName = String(filename || "file").toLowerCase().replace(/\s+/g, "-");

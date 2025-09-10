@@ -113,7 +113,15 @@ export async function createMerchant(req, res) {
 
     // Images (optional)
     if (f.logo?.[0]) {
-      const file = f.logo;
+      const file = f.logo[0];
+      console.log(
+        "uploading",
+        file.originalname,
+        "size",
+        file.size,
+        "buffer?",
+        !!file.buffer
+      );
       const { url, error } = await uploadImageBuffer(
         BUCKET,
         FOLDER,
@@ -122,16 +130,23 @@ export async function createMerchant(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Logo upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Logo upload failed", details: error },
+        });
       toInsert.logo_url = url;
     }
     if (f.top_banner?.[0]) {
-      const file = f.top_banner;
+      const file = f.top_banner[0];
+      console.log(
+        "uploading",
+        file.originalname,
+        "size",
+        file.size,
+        "buffer?",
+        !!file.buffer
+      );
+      0;
       const { url, error } = await uploadImageBuffer(
         BUCKET,
         FOLDER,
@@ -140,16 +155,22 @@ export async function createMerchant(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Top banner upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Top banner upload failed", details: error },
+        });
       toInsert.top_banner_url = url;
     }
     if (f.side_banner?.[0]) {
-      const file = f.side_banner;
+      const file = f.side_banner[0];
+      console.log(
+        "uploading",
+        file.originalname,
+        "size",
+        file.size,
+        "buffer?",
+        !!file.buffer
+      );
       const { url, error } = await uploadImageBuffer(
         BUCKET,
         FOLDER,
@@ -158,12 +179,10 @@ export async function createMerchant(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Side banner upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Side banner upload failed", details: error },
+        });
       toInsert.side_banner_url = url;
     }
 
@@ -320,7 +339,15 @@ export async function updateMerchant(req, res) {
 
     // New files overwrite
     if (f.logo?.[0]) {
-      const file = f.logo;
+      const file = f.logo[0];
+      console.log(
+        "uploading",
+        file.originalname,
+        "size",
+        file.size,
+        "buffer?",
+        !!file.buffer
+      );
       const { url, error } = await uploadImageBuffer(
         BUCKET,
         FOLDER,
@@ -329,16 +356,22 @@ export async function updateMerchant(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Logo upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Logo upload failed", details: error },
+        });
       patch.logo_url = url;
     }
     if (f.top_banner?.[0]) {
-      const file = f.top_banner;
+      const file = f.top_banner[0];
+      console.log(
+        "uploading",
+        file.originalname,
+        "size",
+        file.size,
+        "buffer?",
+        !!file.buffer
+      );
       const { url, error } = await uploadImageBuffer(
         BUCKET,
         FOLDER,
@@ -347,16 +380,22 @@ export async function updateMerchant(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Top banner upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Top banner upload failed", details: error },
+        });
       patch.top_banner_url = url;
     }
     if (f.side_banner?.[0]) {
-      const file = f.side_banner;
+      const file = f.side_banner[0];
+      console.log(
+        "uploading",
+        file.originalname,
+        "size",
+        file.size,
+        "buffer?",
+        !!file.buffer
+      );
       const { url, error } = await uploadImageBuffer(
         BUCKET,
         FOLDER,
@@ -365,12 +404,10 @@ export async function updateMerchant(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Side banner upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Side banner upload failed", details: error },
+        });
       patch.side_banner_url = url;
     }
 

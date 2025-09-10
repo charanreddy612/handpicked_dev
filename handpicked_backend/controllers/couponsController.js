@@ -1,6 +1,6 @@
 // src/controllers/couponsController.js
 import { uploadImageBuffer } from "../services/storageService.js";
-import * as CouponsRepo from "../dbhelper/CouponsRepo.js"
+import * as CouponsRepo from "../dbhelper/CouponsRepo.js";
 
 const BUCKET = process.env.UPLOAD_BUCKET || "coupon-images";
 const FOLDER = "coupons";
@@ -19,7 +19,9 @@ export async function listCoupons(req, res) {
       store_id: req.query.store_id ? Number(req.query.store_id) : undefined,
       type: req.query.type || "",
       status: req.query.status || "",
-      category_id: req.query.category_id ? Number(req.query.category_id) : undefined,
+      category_id: req.query.category_id
+        ? Number(req.query.category_id)
+        : undefined,
       filter: req.query.filter || "",
       from_date: req.query.from_date || "",
       to_date: req.query.to_date || "",
@@ -29,7 +31,15 @@ export async function listCoupons(req, res) {
     const { rows, total } = await CouponsRepo.list(params);
     return res.json({ data: { rows, total }, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error listing coupons", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error listing coupons",
+          details: err?.message || err,
+        },
+      });
   }
 }
 
@@ -39,7 +49,15 @@ export async function getCoupon(req, res) {
     const data = await CouponsRepo.getById(req.params.id);
     return res.json({ data, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error fetching coupon", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error fetching coupon",
+          details: err?.message || err,
+        },
+      });
   }
 }
 
@@ -54,7 +72,8 @@ export async function createCoupon(req, res) {
       coupon_type: b.coupon_type || "coupon", // 'coupon' | 'deal'
       title: b.title || "",
       h_block: b.h_block || "",
-      coupon_code: (b.coupon_type || "coupon") === "coupon" ? (b.coupon_code || "") : "",
+      coupon_code:
+        (b.coupon_type || "coupon") === "coupon" ? b.coupon_code || "" : "",
       aff_url: b.aff_url || "",
       description: b.description || "",
       filter_id: b.filter_id ? Number(b.filter_id) : null,
@@ -75,22 +94,54 @@ export async function createCoupon(req, res) {
     };
 
     if (f.image?.[0]) {
-      const file = f.image;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Image upload failed", details: error } });
+      const file = f.image[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Image upload failed", details: error },
+          });
       payload.image_url = url;
     }
     if (f.proof_image?.[0]) {
-      const file = f.proof_image;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Proof image upload failed", details: error } });
+      const file = f.proof_image[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Proof image upload failed", details: error },
+          });
       payload.proof_image_url = url;
     }
 
     const created = await CouponsRepo.insert(payload);
     return res.status(201).json({ data: created, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error creating coupon", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error creating coupon",
+          details: err?.message || err,
+        },
+      });
   }
 }
 
@@ -102,51 +153,104 @@ export async function updateCoupon(req, res) {
     const f = req.files || {};
 
     const patch = {
-      merchant_id: b.store_id !== undefined ? (b.store_id ? Number(b.store_id) : null) : undefined,
+      merchant_id:
+        b.store_id !== undefined
+          ? b.store_id
+            ? Number(b.store_id)
+            : null
+          : undefined,
       coupon_type: b.coupon_type ?? undefined,
       title: b.title ?? undefined,
       h_block: b.h_block ?? undefined,
       coupon_code:
         b.coupon_type === "coupon"
-          ? (b.coupon_code ?? "")
+          ? b.coupon_code ?? ""
           : b.coupon_type === "deal"
           ? ""
           : undefined,
       aff_url: b.aff_url ?? undefined,
       description: b.description ?? undefined,
-      filter_id: b.filter_id !== undefined ? (b.filter_id ? Number(b.filter_id) : null) : undefined,
-      category_id: b.category_id !== undefined ? (b.category_id ? Number(b.category_id) : null) : undefined,
+      filter_id:
+        b.filter_id !== undefined
+          ? b.filter_id
+            ? Number(b.filter_id)
+            : null
+          : undefined,
+      category_id:
+        b.category_id !== undefined
+          ? b.category_id
+            ? Number(b.category_id)
+            : null
+          : undefined,
       show_proof: b.show_proof !== undefined ? toBool(b.show_proof) : undefined,
-      ends_at: b.expiry_date !== undefined ? (b.expiry_date || null) : undefined,
-      starts_at: b.schedule_date !== undefined ? (b.schedule_date || null) : undefined,
-      is_editor: b.editor_pick !== undefined ? toBool(b.editor_pick) : undefined,
-      editor_order: b.editor_order !== undefined ? toInt(b.editor_order || 0, 0) : undefined,
+      ends_at: b.expiry_date !== undefined ? b.expiry_date || null : undefined,
+      starts_at:
+        b.schedule_date !== undefined ? b.schedule_date || null : undefined,
+      is_editor:
+        b.editor_pick !== undefined ? toBool(b.editor_pick) : undefined,
+      editor_order:
+        b.editor_order !== undefined
+          ? toInt(b.editor_order || 0, 0)
+          : undefined,
       coupon_style: b.coupon_style ?? undefined,
       special_msg_type: b.special_msg_type ?? undefined,
       special_msg: b.special_msg ?? undefined,
       push_to: b.push_to ?? undefined,
       level: b.level ?? undefined,
       home: b.home !== undefined ? toBool(b.home) : undefined,
-      is_brand_coupon: b.is_brand_coupon !== undefined ? toBool(b.is_brand_coupon) : undefined,
+      is_brand_coupon:
+        b.is_brand_coupon !== undefined ? toBool(b.is_brand_coupon) : undefined,
     };
 
     if (f.image?.[0]) {
-      const file = f.image;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Image upload failed", details: error } });
+      const file = f.image[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Image upload failed", details: error },
+          });
       patch.image_url = url;
     }
     if (f.proof_image?.[0]) {
-      const file = f.proof_image;
-      const { url, error } = await uploadImageBuffer(BUCKET, FOLDER, file.buffer, file.originalname, file.mimetype);
-      if (error) return res.status(500).json({ data: null, error: { message: "Proof image upload failed", details: error } });
+      const file = f.proof_image[0];
+      const { url, error } = await uploadImageBuffer(
+        BUCKET,
+        FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error)
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Proof image upload failed", details: error },
+          });
       patch.proof_image_url = url;
     }
 
     const updated = await CouponsRepo.update(id, patch);
     return res.json({ data: updated, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error updating coupon", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error updating coupon",
+          details: err?.message || err,
+        },
+      });
   }
 }
 
@@ -157,7 +261,15 @@ export async function togglePublish(req, res) {
     const data = await CouponsRepo.togglePublish(id);
     return res.json({ data, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error toggling publish", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error toggling publish",
+          details: err?.message || err,
+        },
+      });
   }
 }
 
@@ -168,7 +280,15 @@ export async function toggleEditorPick(req, res) {
     const data = await CouponsRepo.toggleEditorPick(id);
     return res.json({ data, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error toggling editor pick", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error toggling editor pick",
+          details: err?.message || err,
+        },
+      });
   }
 }
 
@@ -177,9 +297,20 @@ export async function deleteCoupon(req, res) {
   try {
     const { id } = req.params;
     const ok = await CouponsRepo.remove(id);
-    if (!ok) return res.status(500).json({ data: null, error: { message: "Failed to delete coupon" } });
+    if (!ok)
+      return res
+        .status(500)
+        .json({ data: null, error: { message: "Failed to delete coupon" } });
     return res.json({ data: { id }, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error deleting coupon", details: err?.message || err } });
+    return res
+      .status(500)
+      .json({
+        data: null,
+        error: {
+          message: "Error deleting coupon",
+          details: err?.message || err,
+        },
+      });
   }
 }
