@@ -90,7 +90,8 @@ export async function createCoupon(req, res) {
       level: b.level || "",
       home: toBool(b.home),
       is_brand_coupon: toBool(b.is_brand_coupon),
-      is_publish: false,
+      is_publish: b.is_publish,
+      click_count: b.click_count ? Number(b.click_count) : 0,
     };
 
     if (f.image?.[0]) {
