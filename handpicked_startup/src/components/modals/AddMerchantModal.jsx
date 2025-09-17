@@ -4,7 +4,7 @@ import {
   addMerchant,
   uploadMerchantImage,
 } from "../../services/merchantService";
-import {getAllCategories} from "../../services/merchantCategoryService.js";
+import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 import SafeQuill from "../common/SafeQuill.jsx";
 
@@ -75,7 +75,11 @@ export default function AddMerchantModal({ onClose, onSave }) {
         }
         const json = await res.json();
         // adapt to your API shape: prefer json.data array, fallback to json
-        const raw = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : json?.categories ?? [];
+        const raw = Array.isArray(json?.data)
+          ? json.data
+          : Array.isArray(json)
+          ? json
+          : json?.categories ?? [];
         const normalized = raw.map((c) =>
           typeof c === "string" ? c : c.name ?? c.category_name ?? String(c.id)
         );
@@ -500,47 +504,42 @@ export default function AddMerchantModal({ onClose, onSave }) {
           <div>
             <label className="block mb-1">Category</label>
 
-            {/* Multi-select dropdown */}
-            <div className="mb-2">
-              {loadingCats ? (
-                <div className="text-sm text-gray-500">Loading categories…</div>
-              ) : (
-                <select
-                  multiple
-                  value={categories}
-                  onChange={onSelectChange}
-                  className="w-full border px-3 py-2 rounded h-36"
-                >
-                  {allCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                Hold Ctrl/Cmd to select multiple. Selected items shown below.
-              </p>
-            </div>
-
-            {/* keep typed add UX */}
+            {/* Dropdown add UX */}
             <div className="flex gap-2">
-              <input
+              <select
                 name="category_input"
                 value={form.category_input}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, category_input: e.target.value }))
+                }
                 className="flex-1 border px-3 py-2 rounded"
-                placeholder="Type a category name"
-              />
+                disabled={loadingCats}
+                aria-label="Select category to add"
+              >
+                <option value="">
+                  {loadingCats ? "Loading categories…" : "Select a category"}
+                </option>
+                {allCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+
               <button
                 type="button"
                 className="bg-blue-600 text-white px-3 py-2 rounded"
-                onClick={addCategory}
+                onClick={() => {
+                  const v = String(form.category_input || "").trim();
+                  if (!v) return;
+                  if (!categories.includes(v))
+                    setCategories((arr) => [...arr, v]);
+                  setForm((f) => ({ ...f, category_input: "" }));
+                }}
               >
                 + Add
               </button>
             </div>
-
             {/* Selected chips */}
             {categories.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -739,7 +738,10 @@ export default function AddMerchantModal({ onClose, onSave }) {
             {brandCategories.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {brandCategories.map((c) => (
-                  <span key={c} className="px-2 py-1 bg-gray-100 rounded border">
+                  <span
+                    key={c}
+                    className="px-2 py-1 bg-gray-100 rounded border"
+                  >
                     {c}
                     <button
                       type="button"

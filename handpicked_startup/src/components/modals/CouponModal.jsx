@@ -32,6 +32,7 @@ export default function CouponModal({ id, onClose }) {
     level: "",
     home: false,
     is_brand_coupon: false,
+    is_publish: true, // <-- default true
   });
 
   const [stores, setStores] = useState([]);
@@ -107,6 +108,8 @@ export default function CouponModal({ id, onClose }) {
           level: result.level || "",
           home: Boolean(result.home),
           is_brand_coupon: !!result.is_brand_coupon,
+          is_publish:
+            result.is_publish !== undefined ? !!result.is_publish : true, // respect existing or default true
         });
       } catch (err) {
         console.error(err);
@@ -124,6 +127,11 @@ export default function CouponModal({ id, onClose }) {
         if (v === null || v === undefined) return;
         fd.append(k, typeof v === "boolean" ? String(v) : String(v));
       });
+      // assign click_count randomly between 400 and 600 for new coupons
+      if (!isEdit) {
+        const rand = Math.floor(Math.random() * (600 - 400 + 1)) + 400;
+        fd.append("click_count", String(rand));
+      }
       if (logoFile) fd.append("image", logoFile);
       if (proofFile) fd.append("proof_image", proofFile);
 
@@ -488,6 +496,21 @@ export default function CouponModal({ id, onClose }) {
                 checked={form.is_brand_coupon}
                 onChange={(e) =>
                   setForm({ ...form, is_brand_coupon: e.target.checked })
+                }
+              />
+              <span>Yes</span>
+            </label>
+          </div>
+
+          {/* Publish toggle (default true) */}
+          <div>
+            <label className="block mb-1">Publish?</label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.is_publish}
+                onChange={(e) =>
+                  setForm({ ...form, is_publish: e.target.checked })
                 }
               />
               <span>Yes</span>

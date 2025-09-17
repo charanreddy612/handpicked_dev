@@ -1,9 +1,11 @@
+// src/components/merchants/EditMerchantModal.jsx
 import React, { useEffect, useState, useRef } from "react";
 import {
   getMerchant,
   updateMerchant,
   uploadMerchantImage,
 } from "../../services/merchantService";
+import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 import SafeQuill from "../common/SafeQuill.jsx";
 
@@ -23,6 +25,10 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [couponH3Blocks, setCouponH3Blocks] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+
+  // --- new: all categories list + loading state
+  const [allCategories, setAllCategories] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
 
   // Temp inputs for list sections
   const [categoryInput, setCategoryInput] = useState("");
@@ -136,6 +142,41 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     };
   }, [merchantId]); // eslint-disable-line
 
+  // fetch all categories (from merchant_categories table)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingCats(true);
+        const res = await getAllCategories();
+        if (!mounted) return;
+        if (!res.ok) {
+          console.error("Failed to load categories", res.status);
+          setAllCategories([]);
+          return;
+        }
+        const json = await res.json();
+        const raw = Array.isArray(json?.data)
+          ? json.data
+          : Array.isArray(json)
+          ? json
+          : json?.categories ?? [];
+        const normalized = raw.map((c) =>
+          typeof c === "string" ? c : c.name ?? c.category_name ?? String(c.id)
+        );
+        setAllCategories(normalized);
+      } catch (err) {
+        console.error("Could not fetch categories:", err);
+        setAllCategories([]);
+      } finally {
+        if (mounted) setLoadingCats(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
@@ -150,7 +191,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   };
 
   const addCategory = () => {
-    const v = categoryInput.trim();
+    const v = (categoryInput || "").trim();
     if (!v) return;
     setCategories((arr) => (arr.includes(v) ? arr : [...arr, v]));
     setCategoryInput("");
@@ -454,16 +495,26 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
             />
           </div>
 
-          {/* Categories inline */}
+          {/* Categories dropdown + add */}
           <div>
             <label className="block mb-1">Category</label>
             <div className="flex gap-2">
-              <input
+              <select
                 value={categoryInput}
                 onChange={(e) => setCategoryInput(e.target.value)}
                 className="flex-1 border px-3 py-2 rounded"
-                placeholder="Type a category name"
-              />
+                disabled={loadingCats}
+                aria-label="Select category to add"
+              >
+                <option value="">
+                  {loadingCats ? "Loading categories…" : "Select a category"}
+                </option>
+                {allCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 className="bg-blue-600 text-white px-3 py-2 rounded"
@@ -613,7 +664,9 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
                 ref={quillRef}
                 theme="snow"
                 value={form.description_html}
-                onChange={(val) => setForm((f) => ({ ...f, description_html: val }))}
+                onChange={(val) =>
+                  setForm((f) => ({ ...f, description_html: val }))
+                }
                 modules={modules}
                 formats={formats}
                 className="h-full"

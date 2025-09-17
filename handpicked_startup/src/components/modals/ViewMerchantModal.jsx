@@ -1,11 +1,17 @@
+// src/components/merchants/ViewMerchantModal.jsx
 import React, { useEffect, useState } from "react";
 import { getMerchant } from "../../services/merchantService";
+import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 import DOMPurify from "dompurify";
 
 export default function ViewMerchantModal({ merchantId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [m, setM] = useState(null);
+
+  // all categories fetched from merchant_categories table
+  const [allCategories, setAllCategories] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -26,6 +32,87 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
       mounted = false;
     };
   }, [merchantId]);
+
+  // fetch and normalize categories list
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingCats(true);
+        const res = await getAllCategories();
+        if (!mounted) return;
+        if (!res.ok) {
+          console.error("Failed to load categories", res.status);
+          setAllCategories([]);
+          return;
+        }
+        const json = await res.json();
+        const raw = Array.isArray(json?.data)
+          ? json.data
+          : Array.isArray(json)
+          ? json
+          : json?.categories ?? [];
+
+        // normalize to objects: { id?, name }
+        const normalized = raw.map((c) =>
+          typeof c === "string"
+            ? { id: undefined, name: c }
+            : {
+                id: c.id ?? c._id ?? undefined,
+                name: c.name ?? c.category_name ?? String(c.id ?? ""),
+              }
+        );
+        setAllCategories(normalized);
+      } catch (err) {
+        console.error("Could not fetch categories:", err);
+        setAllCategories([]);
+      } finally {
+        if (mounted) setLoadingCats(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // helpers to resolve category item (id | name | object) -> display name
+  const buildLookups = () => {
+    const byId = new Map();
+    const byName = new Map();
+    for (const c of allCategories) {
+      if (c.id !== undefined && c.id !== null) byId.set(String(c.id), c.name);
+      if (c.name) byName.set(String(c.name).toLowerCase(), c.name);
+    }
+    return { byId, byName };
+  };
+
+  const resolveCategoryName = (item) => {
+    if (item == null) return "—";
+    const { byId, byName } = buildLookups();
+
+    // plain number (id)
+    if (typeof item === "number") {
+      return byId.get(String(item)) ?? String(item);
+    }
+
+    // plain string: could be id string or name
+    if (typeof item === "string") {
+      if (byId.has(item)) return byId.get(item);
+      const lower = item.toLowerCase();
+      if (byName.has(lower)) return byName.get(lower);
+      return item;
+    }
+
+    // object shape { id, name } or { name: ... }
+    if (typeof item === "object") {
+      if (item.name) return item.name;
+      if (item.id && byId.has(String(item.id)))
+        return byId.get(String(item.id));
+      return String(item);
+    }
+
+    return String(item);
+  };
 
   const Bool = ({ v }) => (
     <span className={v ? "text-green-600" : "text-gray-500"}>
@@ -51,6 +138,13 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
     );
   }
 
+  // compute display string for categories (robust to id/name/object)
+  const renderedCategories = (() => {
+    const list = Array.isArray(m?.category_names) ? m.category_names : [];
+    if (!list.length) return "—";
+    return list.map((it) => resolveCategoryName(it)).join(", ");
+  })();
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-6xl rounded shadow-lg p-6 max-h-[95vh] overflow-y-auto">
@@ -68,11 +162,7 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
         </div>
 
         {/* Categories */}
-        <Field label="Categories">
-          {Array.isArray(m?.category_names) && m.category_names.length
-            ? m.category_names.join(", ")
-            : "—"}
-        </Field>
+        <Field label="Categories">{renderedCategories}</Field>
 
         {/* URLs and tracker */}
         <div className="grid grid-cols-2 gap-4">
