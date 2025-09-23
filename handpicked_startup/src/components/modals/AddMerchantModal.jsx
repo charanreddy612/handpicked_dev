@@ -8,8 +8,8 @@ import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 
 // Use shared Tiptap editor component
-import TiptapEditor from "../common/TipTapEditor.jsx";
-
+import React, { Suspense } from "react";
+const TiptapEditor = React.lazy(() => import("../common/TipTapEditor.jsx"));
 /**
  * Drop-in replacement: preserves original state/submit logic.
  * Requirements:
@@ -565,15 +565,17 @@ export default function AddMerchantModal({ onClose, onSave }) {
             <label className="block mb-1">Description</label>
             <div className="h-80 border rounded bg-white p-2">
               {/* Use the shared TiptapEditor. It calls onUpdate(html,json) */}
-              <TiptapEditor
-                valueHtml={form.description_html}
-                onUpdate={(html, json) => {
-                  setForm((f) => ({ ...f, description_html: html }));
-                  editorJsonRef.current = json;
-                }}
-                uploadImage={uploadImage}
-                className="h-full"
-              />
+              <Suspense fallback={<div>Loading editor…</div>}>
+                <TiptapEditor
+                  valueHtml={form.description_html}
+                  onUpdate={(html, json) => {
+                    setForm((f) => ({ ...f, description_html: html }));
+                    editorJsonRef.current = json;
+                  }}
+                  uploadImage={uploadImage}
+                  className="h-full"
+                />
+              </Suspense>
             </div>
           </div>
 

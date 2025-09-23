@@ -7,7 +7,8 @@ import {
 } from "../../services/merchantService";
 import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
-import TiptapEditor from "../common/TipTapEditor.jsx";
+import React, { Suspense } from "react";
+const TiptapEditor = React.lazy(() => import("../common/TipTapEditor.jsx"));
 
 export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [loading, setLoading] = useState(true);
@@ -579,15 +580,17 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
           <div>
             <label className="block mb-1">Description</label>
             <div className="h-80 border rounded bg-white p-2">
-              <TiptapEditor
-                valueHtml={form.description_html}
-                onUpdate={(html, json) => {
-                  setForm((f) => ({ ...f, description_html: html }));
-                  editorJsonRef.current = json;
-                }}
-                uploadImage={uploadImage}
-                className="h-full"
-              />
+              <Suspense fallback={<div>Loading editor…</div>}>
+                <TiptapEditor
+                  valueHtml={form.description_html}
+                  onUpdate={(html, json) => {
+                    setForm((f) => ({ ...f, description_html: html }));
+                    editorJsonRef.current = json;
+                  }}
+                  uploadImage={uploadImage}
+                  className="h-full"
+                />
+              </Suspense>
             </div>
           </div>
 
