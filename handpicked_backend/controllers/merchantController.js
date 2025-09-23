@@ -1,6 +1,11 @@
 import * as merchantRepo from "../dbhelper/MerchantRepo.js";
 import { uploadImageBuffer } from "../services/storageService.js";
 import { deleteFilesByUrls } from "../services/deleteFilesByUrl.js";
+import jsdom from "jsdom";
+import createDOMPurify from "isomorphic-dompurify";
+const { JSDOM } = jsdom;
+const window = new JSDOM("").window;
+const DOMPurify = createDOMPurify(window);
 
 const BUCKET = process.env.UPLOAD_BUCKET || "merchant-images";
 const FOLDER = "merchants";
@@ -78,7 +83,15 @@ export async function createMerchant(req, res) {
 
       // content blocks
       side_description_html: b.side_description_html || "",
-      description_html: b.description_html || b.description || "",
+      // sanitize HTML server-side and allow image attrs needed by editor
+      description_html: DOMPurify.sanitize(
+        b.description_html || b.description || "",
+        {
+          ADD_ATTR: ["width", "height", "style", "alt", "title"],
+        }
+      ),
+      // store TipTap JSON if provided (string or object)
+      description_json: parseJSON(b.description_json, null),
       table_content_html: b.table_content_html || "",
       ads_description_html: b.ads_description_html || "",
       ads_description_label: b.ads_description_label || "",
@@ -248,9 +261,18 @@ export async function updateMerchant(req, res) {
           : undefined,
       description_html:
         b.description_html !== undefined
-          ? b.description_html
+          ? DOMPurify.sanitize(b.description_html, {
+              ADD_ATTR: ["width", "height", "style", "alt", "title"],
+            })
           : b.description !== undefined
-          ? b.description
+          ? DOMPurify.sanitize(b.description, {
+              ADD_ATTR: ["width", "height", "style", "alt", "title"],
+            })
+          : undefined,
+      // TipTap JSON (optional)
+      description_json:
+        b.description_json !== undefined
+          ? parseJSON(b.description_json, null)
           : undefined,
       table_content_html:
         b.table_content_html !== undefined ? b.table_content_html : undefined,
