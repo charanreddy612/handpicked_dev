@@ -29,9 +29,10 @@ app.use(
       return callback(null, false);
     },
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     credentials: true,
     preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 app.options("/api/auth/login", cors());
