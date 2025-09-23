@@ -142,7 +142,7 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
         setLoadingCats(true);
         const res = await getAllCategories();
         if (!mounted) return;
-        if (!res.ok) {
+        if (res.length === 0) {
           console.error("Failed to load categories", res.status);
           setAllCategories([]);
           return;

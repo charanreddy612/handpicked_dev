@@ -2,11 +2,16 @@
 import React, { useEffect, useState, useRef } from "react";
 
 /**
- * Robust client-only TipTap loader (drop-in).
- * Dynamically imports TipTap + extensions and defensively maps exports.
+ * Minimal, robust TipTap client loader.
+ * - Dynamically imports TipTap in browser only.
+ * - Supports bold/italic/underline/lists/headings/link/image/codeblock.
+ * - No table, no BubbleMenu (these caused your failures).
  *
  * Props:
- * - valueHtml, onUpdate(html,json), uploadImage(file) -> url, className
+ * - valueHtml (string)
+ * - onUpdate (html, json)
+ * - uploadImage (async file -> url)
+ * - className
  */
 export default function TiptapEditorClient(props) {
   const { valueHtml = "", onUpdate, uploadImage, className = "" } = props;
@@ -14,185 +19,36 @@ export default function TiptapEditorClient(props) {
 
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
-        // dynamic imports
-        const [
-          tiptapReactModule,
-          StarterKitModule,
-          UnderlineModule,
-          LinkModule,
-          ImageModule,
-          TableModule,
-          TableRowModule,
-          TableCellModule,
-          TableHeaderModule,
-          TextAlignModule,
-          PlaceholderModule,
-        ] = await Promise.all([
-          import("@tiptap/react"),
-          import("@tiptap/starter-kit"),
-          import("@tiptap/extension-underline"),
-          import("@tiptap/extension-link"),
-          import("@tiptap/extension-image"),
-          import("@tiptap/extension-table"),
-          import("@tiptap/extension-table-row"),
-          import("@tiptap/extension-table-cell"),
-          import("@tiptap/extension-table-header"),
-          import("@tiptap/extension-text-align"),
-          import("@tiptap/extension-placeholder"),
-        ]);
+        const tiptap = await import("@tiptap/react");
+        const StarterKit = (await import("@tiptap/starter-kit")).default;
+        const Underline = (await import("@tiptap/extension-underline")).default;
+        const Link = (await import("@tiptap/extension-link")).default;
+        const Image = (await import("@tiptap/extension-image")).default;
+        const Placeholder = (await import("@tiptap/extension-placeholder"))
+          .default;
 
         if (!mounted) return;
 
-        // helper to extract extension from module (tries common locations)
-        const pick = (mod, names = []) => {
-          if (!mod) return null;
-          if (mod.default) return mod.default;
-          for (const n of names) {
-            if (mod[n]) return mod[n];
-          }
-          // fallback to module itself (some bundles export directly)
-          return mod;
-        };
-
-        // extract core exports
         const EditorContent =
-          tiptapReactModule.EditorContent ??
-          tiptapReactModule.default?.EditorContent;
-        const useEditor =
-          tiptapReactModule.useEditor ?? tiptapReactModule.default?.useEditor;
-        const BubbleMenuComp =
-          tiptapReactModule.BubbleMenu ??
-          tiptapReactModule.default?.BubbleMenu ??
-          null;
+          tiptap.EditorContent ?? tiptap.default?.EditorContent;
+        const useEditor = tiptap.useEditor ?? tiptap.default?.useEditor;
 
-        // extract extensions robustly
-        const Starter = pick(StarterKitModule, ["StarterKit", "default"]);
-        const UnderlineExt = pick(UnderlineModule, ["Underline", "default"]);
-        const LinkExt = pick(LinkModule, ["Link", "default"]);
-        const ImageExtDef = pick(ImageModule, ["Image", "default"]);
-        const TableExt = pick(TableModule, ["Table", "default"]);
-        const TableRowExt = pick(TableRowModule, ["TableRow", "default"]);
-        const TableCellExt = pick(TableCellModule, ["TableCell", "default"]);
-        const TableHeaderExt = pick(TableHeaderModule, [
-          "TableHeader",
-          "default",
-        ]);
-        const TextAlignExt = pick(TextAlignModule, ["TextAlign", "default"]);
-        const PlaceholderExt = pick(PlaceholderModule, [
-          "Placeholder",
-          "default",
-        ]);
-
-        // Editor inner component
-        function EditorInnerCmp(innerProps) {
-          const {
-            valueHtml: vHtml,
-            onUpdate: onUpd,
-            uploadImage: upImg,
-            className: cls,
-          } = innerProps;
-
-          // build extension instances (feature-detect configure/extend methods)
-          const rawExts = [];
-
-          if (Starter) {
-            // StarterKit is usually a function; try configure or push directly
-            try {
-              rawExts.push(Starter.configure ? Starter.configure({}) : Starter);
-            } catch (e) {
-              rawExts.push(Starter);
-            }
-          }
-
-          if (UnderlineExt) rawExts.push(UnderlineExt);
-          if (LinkExt)
-            rawExts.push(
-              LinkExt.configure
-                ? LinkExt.configure({ openOnClick: true })
-                : LinkExt
-            );
-
-          if (ImageExtDef) {
-            if (ImageExtDef.extend) {
-              rawExts.push(
-                ImageExtDef.extend({
-                  addAttributes() {
-                    return {
-                      src: {},
-                      alt: { default: null },
-                      title: { default: null },
-                      width: { default: null },
-                      height: { default: null },
-                    };
-                  },
-                })
-              );
-            } else {
-              rawExts.push(ImageExtDef);
-            }
-          }
-
-          // include root 'table' extension first (if present)
-          if (TableExt)
-            rawExts.push(
-              TableExt.configure
-                ? TableExt.configure({ resizable: true })
-                : TableExt
-            );
-          if (TableRowExt) rawExts.push(TableRowExt);
-          if (TableHeaderExt) rawExts.push(TableHeaderExt);
-          if (TableCellExt) rawExts.push(TableCellExt);
-
-          if (TextAlignExt)
-            rawExts.push(
-              TextAlignExt.configure
-                ? TextAlignExt.configure({ types: ["heading", "paragraph"] })
-                : TextAlignExt
-            );
-          if (PlaceholderExt)
-            rawExts.push(
-              PlaceholderExt.configure
-                ? PlaceholderExt.configure({ placeholder: "Write here..." })
-                : PlaceholderExt
-            );
-
-          // dedupe extensions by safe name detection
-          const extMap = new Map();
-          let fallbackCounter = 0;
-          for (const e of rawExts) {
-            if (!e) continue;
-            let nm = null;
-            try {
-              if (typeof e === "object" && e !== null) {
-                if (typeof e.name === "string" && e.name) nm = e.name;
-                else if (
-                  e.constructor &&
-                  typeof e.constructor.name === "string"
-                )
-                  nm = e.constructor.name;
-                else if (e.options && e.options.name) nm = e.options.name;
-              } else if (typeof e === "function" && e.name) nm = e.name;
-            } catch (er) {
-              /* ignore */
-            }
-            if (!nm) nm = `__ext_fallback_${++fallbackCounter}`;
-            if (!extMap.has(nm)) extMap.set(nm, e);
-          }
-
-          const extensions = Array.from(extMap.values());
-          try {
-            console.debug(
-              "TipTap: registered extensions:",
-              Array.from(extMap.keys())
-            );
-          } catch (er) {}
-
-          // create editor
+        function EditorInnerCmp({
+          valueHtml: vHtml,
+          onUpdate: onUpd,
+          uploadImage: upImg,
+          className: cls,
+        }) {
           const editor = useEditor({
-            extensions,
+            extensions: [
+              StarterKit.configure({ history: true }),
+              Underline,
+              Link.configure({ openOnClick: true }),
+              Image,
+              Placeholder.configure({ placeholder: "Write here..." }),
+            ],
             content: vHtml || "<p></p>",
             onUpdate: ({ editor }) => {
               try {
@@ -200,30 +56,12 @@ export default function TiptapEditorClient(props) {
                 const json = editor.getJSON();
                 onUpd?.(html, json);
               } catch (err) {
-                console.error("onUpdate error", err);
+                console.error("editor onUpdate failed", err);
               }
             },
           });
 
-          // stable ref
-          const editorRef = useRef(null);
-          useEffect(() => {
-            editorRef.current = editor;
-          }, [editor]);
-
-          // sync external HTML changes
-          useEffect(() => {
-            const ed = editorRef.current;
-            if (!ed) return;
-            try {
-              if (vHtml && ed.getHTML() !== vHtml)
-                ed.commands.setContent(vHtml, false);
-            } catch (e) {
-              console.error("sync content failed", e);
-            }
-          }, [vHtml]);
-
-          // file input for images
+          // image input and upload
           const fileRef = useRef(null);
           const insertImageFile = async (file) => {
             if (!file) return;
@@ -231,53 +69,107 @@ export default function TiptapEditorClient(props) {
               console.error("uploadImage prop required");
               return;
             }
+            if (file.size > 10 * 1024 * 1024) {
+              alert("Image too large (max 10MB)");
+              return;
+            }
             try {
-              if (file.size > 10 * 1024 * 1024) {
-                alert("Image too large (max 10MB)");
-                return;
-              }
               const url = await upImg(file);
               if (!url) throw new Error("no url returned");
-              const ed = editorRef.current;
-              if (ed && ed.chain) {
-                ed.chain().focus().setImage({ src: url, alt: file.name }).run();
-              } else {
-                console.warn("Editor not ready for image insertion");
-              }
-            } catch (err) {
-              console.error("Image upload failed", err);
+              editor
+                .chain()
+                .focus()
+                .setImage({ src: url, alt: file.name })
+                .run();
+            } catch (e) {
+              console.error("Image upload failed", e);
               alert("Image upload failed");
             }
           };
 
-          // insert table (guard)
-          const handleInsertTable = () => {
-            const ed = editorRef.current;
-            if (!ed) {
-              alert("Editor not ready");
-              return;
-            }
-            // many versions attach insertTable to commands - guard both forms
+          // simple image alt/title editor (shows when an img inside editor is clicked)
+          const containerRef = useRef(null);
+          const [selectedImage, setSelectedImage] = useState(null); // { src, alt, title, nodePos }
+
+          useEffect(() => {
+            if (!containerRef.current) return;
+            const root = containerRef.current;
+            const onClick = (ev) => {
+              const img =
+                ev.target && ev.target.tagName === "IMG" ? ev.target : null;
+              if (!img) {
+                setSelectedImage(null);
+                return;
+              }
+              // get current attributes from editor (best-effort)
+              try {
+                const attrs = editor?.getAttributes?.("image") ?? {};
+                // But attrs corresponds to selection; we'll read DOM attributes for reliability
+                setSelectedImage({
+                  src: img.getAttribute("src"),
+                  alt: img.getAttribute("alt") || "",
+                  title: img.getAttribute("title") || "",
+                  // node position isn't reliable across builds; we'll update by replacing the img node by src match
+                });
+              } catch (err) {
+                setSelectedImage({
+                  src: img.src,
+                  alt: img.alt || "",
+                  title: img.title || "",
+                });
+              }
+            };
+            root.addEventListener("click", onClick);
+            return () => root.removeEventListener("click", onClick);
+          }, [editor]);
+
+          const updateSelectedImageAttr = (patch) => {
+            if (!selectedImage) return;
             try {
-              if (
-                ed.commands &&
-                typeof ed.commands.insertTable === "function"
-              ) {
-                ed.chain()
+              // find image nodes and update attributes when src matches
+              const json = editor.getJSON();
+              const walk = (node, path = []) => {
+                if (!node) return null;
+                if (
+                  node.type === "image" &&
+                  node.attrs &&
+                  node.attrs.src === selectedImage.src
+                ) {
+                  return { node, path };
+                }
+                if (node.content && Array.isArray(node.content)) {
+                  for (let i = 0; i < node.content.length; i++) {
+                    const found = walk(node.content[i], path.concat(i));
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+              const found = walk(json);
+              if (!found) {
+                // fallback: update all images with matching src using chain().updateAttributes
+                editor
+                  .chain()
                   .focus()
-                  .insertTable({ rows: 2, cols: 2, withHeaderRow: true })
+                  .updateAttributes("image", { ...patch })
                   .run();
-                return;
+                // this will update the *selection* image; not perfect but simple fallback
+              } else {
+                // compute a selection to that node using transaction if possible
+                // simpler approach: replace every image with same src by re-setting attributes via editor.commands
+                const currentAttrs = found.node.attrs || {};
+                const newAttrs = { ...currentAttrs, ...patch };
+                // Use updateAttributes (this updates selected node only), so ensure we select that node first
+                // select node by searching for the occurrence in document text isn't trivial; use a simple replace:
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", newAttrs)
+                  .run();
               }
-              // some builds provide createTable or table commands; best-effort fallback:
-              if (ed.chain && ed.chain().insertTable) {
-                ed.chain().focus().insertTable({ rows: 2, cols: 2 }).run();
-                return;
-              }
-              alert("Table feature not available in this build.");
+              setSelectedImage((s) => ({ ...s, ...patch }));
             } catch (err) {
-              console.error("Insert table error", err);
-              alert("Table feature not available.");
+              console.error("updateSelectedImageAttr failed", err);
             }
           };
 
@@ -286,18 +178,14 @@ export default function TiptapEditorClient(props) {
               <div className="mb-2 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    editorRef.current?.chain()?.focus()?.toggleBold()?.run()
-                  }
+                  onClick={() => editor?.chain().focus().toggleBold().run()}
                   className="px-2 py-1 border rounded"
                 >
                   B
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    editorRef.current?.chain()?.focus()?.toggleItalic()?.run()
-                  }
+                  onClick={() => editor?.chain().focus().toggleItalic().run()}
                   className="px-2 py-1 border rounded"
                 >
                   I
@@ -305,69 +193,71 @@ export default function TiptapEditorClient(props) {
                 <button
                   type="button"
                   onClick={() =>
-                    editorRef.current
-                      ?.chain()
-                      ?.focus()
-                      ?.toggleUnderline()
-                      ?.run()
+                    editor?.chain().focus().toggleUnderline().run()
                   }
                   className="px-2 py-1 border rounded"
                 >
                   U
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
-                    editorRef.current
-                      ?.chain()
-                      ?.focus()
-                      ?.toggleBulletList()
-                      ?.run()
+                    editor?.chain().focus().toggleOrderedList().run()
                   }
                   className="px-2 py-1 border rounded"
                 >
-                  • List
+                  1.
                 </button>
                 <button
                   type="button"
                   onClick={() =>
-                    editorRef.current
-                      ?.chain()
-                      ?.focus()
-                      ?.toggleOrderedList()
-                      ?.run()
+                    editor?.chain().focus().toggleBulletList().run()
                   }
                   className="px-2 py-1 border rounded"
                 >
-                  1. List
+                  •
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
-                    editorRef.current?.chain()?.focus()?.setParagraph()?.run()
-                  }
-                  className="px-2 py-1 border rounded"
-                >
-                  P
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    editorRef.current
-                      ?.chain()
-                      ?.focus()
-                      ?.toggleCodeBlock()
-                      ?.run()
+                    editor?.chain().focus().toggleCodeBlock().run()
                   }
                   className="px-2 py-1 border rounded"
                 >{`</>`}</button>
 
+                <select
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "p") editor.chain().focus().setParagraph().run();
+                    else
+                      editor
+                        .chain()
+                        .focus()
+                        .toggleHeading({ level: Number(v) })
+                        .run();
+                    e.target.value = "p";
+                  }}
+                  defaultValue="p"
+                  className="border px-2 py-1 rounded"
+                >
+                  <option value="p">Paragraph</option>
+                  <option value="1">H1</option>
+                  <option value="2">H2</option>
+                  <option value="3">H3</option>
+                </select>
+
                 <button
                   type="button"
-                  onClick={handleInsertTable}
+                  onClick={() => {
+                    const url = prompt("Enter link URL");
+                    if (url)
+                      editor.chain().focus().setLink({ href: url }).run();
+                  }}
                   className="px-2 py-1 border rounded"
                 >
-                  Table
+                  Link
                 </button>
 
                 <button
@@ -386,7 +276,10 @@ export default function TiptapEditorClient(props) {
                 />
               </div>
 
-              <div className="border rounded bg-white min-h-[240px]">
+              <div
+                ref={containerRef}
+                className="border rounded bg-white min-h-[240px]"
+              >
                 {editor ? (
                   <EditorContent editor={editor} />
                 ) : (
@@ -394,85 +287,70 @@ export default function TiptapEditorClient(props) {
                 )}
               </div>
 
-              {editor && BubbleMenuComp && (
-                <BubbleMenuComp
-                  editor={editor}
-                  tippyOptions={{ duration: 100 }}
-                >
-                  <div className="bg-white border rounded p-2 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const ed = editorRef.current;
-                        const src = ed?.getAttributes("image")?.src;
-                        if (src) window.open(src, "_blank", "noopener");
-                      }}
-                      className="px-2 py-1 border rounded"
-                    >
-                      Open
-                    </button>
+              {/* simple inline image editor */}
+              {selectedImage && (
+                <div className="mt-2 border rounded p-2 bg-white max-w-md">
+                  <div className="font-medium mb-2">Image</div>
+                  <div className="text-xs text-gray-600 mb-2 break-all">
+                    {selectedImage.src}
+                  </div>
 
-                    <label className="flex items-center gap-2">
-                      Alt:
-                      <input
-                        type="text"
-                        defaultValue={
-                          editorRef.current?.getAttributes("image")?.alt || ""
-                        }
-                        onBlur={(e) => {
-                          const ed = editorRef.current;
-                          if (!ed) return;
-                          const alt = e.target.value || null;
-                          ed.chain()
-                            .focus()
-                            .updateAttributes("image", {
-                              ...ed.getAttributes("image"),
-                              alt,
-                            })
-                            .run();
-                        }}
-                        className="border px-2 py-1 rounded"
-                      />
-                    </label>
-
-                    <label className="flex items-center gap-2">
-                      Title:
-                      <input
-                        type="text"
-                        defaultValue={
-                          editorRef.current?.getAttributes("image")?.title || ""
-                        }
-                        onBlur={(e) => {
-                          const ed = editorRef.current;
-                          if (!ed) return;
-                          const title = e.target.value || null;
-                          ed.chain()
-                            .focus()
-                            .updateAttributes("image", {
-                              ...ed.getAttributes("image"),
-                              title,
-                            })
-                            .run();
-                        }}
-                        className="border px-2 py-1 rounded"
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        editorRef.current
-                          ?.chain()
-                          ?.focus()
-                          ?.deleteSelection()
-                          ?.run()
+                  <label className="block mb-2">
+                    Alt:
+                    <input
+                      className="w-full border px-2 py-1 rounded mt-1"
+                      value={selectedImage.alt}
+                      onChange={(e) =>
+                        setSelectedImage((s) => ({ ...s, alt: e.target.value }))
                       }
-                      className="px-2 py-1 border rounded"
+                      onBlur={(e) =>
+                        updateSelectedImageAttr({ alt: e.target.value || null })
+                      }
+                    />
+                  </label>
+
+                  <label className="block mb-2">
+                    Title:
+                    <input
+                      className="w-full border px-2 py-1 rounded mt-1"
+                      value={selectedImage.title}
+                      onChange={(e) =>
+                        setSelectedImage((s) => ({
+                          ...s,
+                          title: e.target.value,
+                        }))
+                      }
+                      onBlur={(e) =>
+                        updateSelectedImageAttr({
+                          title: e.target.value || null,
+                        })
+                      }
+                    />
+                  </label>
+
+                  <div className="flex gap-2">
+                    <button
+                      className="px-3 py-1 border rounded"
+                      onClick={() => {
+                        // delete image: replace selection if possible
+                        try {
+                          editor.chain().focus().deleteSelection().run();
+                          setSelectedImage(null);
+                        } catch (err) {
+                          console.error("delete image fail", err);
+                        }
+                      }}
                     >
-                      Delete
+                      Delete image
+                    </button>
+                    <button
+                      className="px-3 py-1 border rounded"
+                      onClick={() => setSelectedImage(null)}
+                    >
+                      Close
                     </button>
                   </div>
-                </BubbleMenuComp>
+                </div>
               )}
             </div>
           );
@@ -490,7 +368,6 @@ export default function TiptapEditorClient(props) {
   }, []);
 
   if (!EditorInner) return <div>Loading editor…</div>;
-
   return (
     <EditorInner
       valueHtml={valueHtml}

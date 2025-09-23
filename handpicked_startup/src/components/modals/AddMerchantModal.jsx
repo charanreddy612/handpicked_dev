@@ -72,7 +72,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
         setLoadingCats(true);
         const res = await getAllCategories();
         if (!mounted) return;
-        if (!res.ok) {
+        if (res.length === 0) {
           setAllCategories([]);
           return;
         }
