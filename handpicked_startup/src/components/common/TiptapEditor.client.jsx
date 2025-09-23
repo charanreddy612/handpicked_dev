@@ -107,17 +107,12 @@ export default function TiptapEditorClient(props) {
                 : PlaceholderExt),
           ].filter(Boolean);
 
-          // Deduplicate by extension name (if available) to avoid duplicate-extension warnings
-        //   const rawExts = rawExts /* your existing array of extensions */ || [];
-
+          // Deduplicate by extension name safely (avoid coercion to primitive)
           let counter = 0;
           const extMap = new Map();
-
           for (const ext of rawExts) {
             if (!ext) continue;
-
-            // derive stable name safely without coercing the whole object to string
-            let name = undefined;
+            let name;
             try {
               if (typeof ext === "object" && ext !== null) {
                 if (typeof ext.name === "string" && ext.name) name = ext.name;
@@ -132,45 +127,56 @@ export default function TiptapEditorClient(props) {
                 name = ext.name;
               }
             } catch (e) {
-              // defensive: if any property access throws, ignore and fallback below
+              // ignore
             }
-
-            if (!name) {
-              // generate a stable fallback (guaranteed string, no coercion of ext)
-              name = `__ext_fallback_${++counter}`;
-            }
-
-            if (!extMap.has(name)) {
-              extMap.set(name, ext);
-            } else {
-              // skip duplicates
-              // console.debug(`TipTap: skipping duplicate extension ${name}`);
-            }
+            if (!name) name = `__ext_fallback_${++counter}`;
+            if (!extMap.has(name)) extMap.set(name, ext);
           }
-
           const extensions = Array.from(extMap.values());
 
-          // optional debug: list registered extension names (safe)
+          // debug
           try {
-            // show what we actually registered
-            // eslint-disable-next-line no-console
             console.debug(
               "TipTap: registered extensions:",
               Array.from(extMap.keys())
             );
           } catch (e) {}
-          // --- END REPLACEMENT ---
 
-          // sync external valueHtml changes
+          // create editor instance
+          const editor = useEditor({
+            extensions,
+            content: vHtml || "<p></p>",
+            onUpdate: ({ editor }) => {
+              try {
+                const html = editor.getHTML();
+                const json = editor.getJSON();
+                onUpd?.(html, json);
+              } catch (e) {
+                console.error("Editor onUpdate failed", e);
+              }
+            },
+          });
+
+          // keep stable ref for handlers (prevents closure timing issues)
+          const editorRef = useRef(null);
           useEffect(() => {
-            if (!editor) return;
-            if (vHtml && editor.getHTML() !== vHtml) {
-              editor.commands.setContent(vHtml, false);
-            }
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-          }, [vHtml, editor]);
+            editorRef.current = editor;
+          }, [editor]);
 
-          // image upload handler via hidden input
+          // sync external valueHtml changes (safe guard)
+          useEffect(() => {
+            const ed = editorRef.current;
+            if (!ed) return;
+            try {
+              if (vHtml && ed.getHTML() !== vHtml) {
+                ed.commands.setContent(vHtml, false);
+              }
+            } catch (e) {
+              console.error("Failed to sync external HTML", e);
+            }
+          }, [vHtml]);
+
+          // image upload handler via hidden input (uses ref)
           const fileRef = useRef(null);
           const insertImageFile = async (file) => {
             if (!file) return;
@@ -185,12 +191,11 @@ export default function TiptapEditorClient(props) {
               }
               const url = await upImg(file);
               if (!url) throw new Error("no url returned");
-              if (editor && editor.chain) {
-                editor
-                  .chain()
-                  .focus()
-                  .setImage({ src: url, alt: file.name })
-                  .run();
+              const ed = editorRef.current;
+              if (ed && ed.chain) {
+                ed.chain().focus().setImage({ src: url, alt: file.name }).run();
+              } else {
+                console.warn("Editor not ready for image insert");
               }
             } catch (e) {
               console.error("Image upload failed", e);
@@ -198,20 +203,17 @@ export default function TiptapEditorClient(props) {
             }
           };
 
-          // guarded insert table
+          // guarded insert table (uses ref)
           const handleInsertTable = () => {
             try {
-              if (!editor || !editor.commands)
-                throw new Error("editor not ready");
-              // some builds may expose nested commands; guard for function
-              if (typeof editor.commands.insertTable === "function") {
-                editor
-                  .chain()
+              const ed = editorRef.current;
+              if (!ed || !ed.commands) throw new Error("editor not ready");
+              if (typeof ed.commands.insertTable === "function") {
+                ed.chain()
                   .focus()
                   .insertTable({ rows: 2, cols: 2, withHeaderRow: true })
                   .run();
               } else {
-                // fallback: try using createTable command path (older/newer variations)
                 console.error("Table command not available on editor.commands");
                 alert("Table feature not available in this build.");
               }
@@ -226,59 +228,90 @@ export default function TiptapEditorClient(props) {
               <div className="mb-2 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => editor?.chain().focus().toggleBold().run()}
+                  onClick={() =>
+                    editorRef.current?.chain()?.focus()?.toggleBold()?.run()
+                  }
                   className="px-2 py-1 border rounded"
                 >
                   B
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => editor?.chain().focus().toggleItalic().run()}
+                  onClick={() =>
+                    editorRef.current?.chain()?.focus()?.toggleItalic()?.run()
+                  }
                   className="px-2 py-1 border rounded"
                 >
                   I
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
-                    editor?.chain().focus().toggleUnderline().run()
+                    editorRef.current
+                      ?.chain()
+                      ?.focus()
+                      ?.toggleUnderline()
+                      ?.run()
                   }
                   className="px-2 py-1 border rounded"
                 >
                   U
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
-                    editor?.chain().focus().toggleBulletList().run()
+                    editorRef.current
+                      ?.chain()
+                      ?.focus()
+                      ?.toggleBulletList()
+                      ?.run()
                   }
                   className="px-2 py-1 border rounded"
                 >
                   • List
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
-                    editor?.chain().focus().toggleOrderedList().run()
+                    editorRef.current
+                      ?.chain()
+                      ?.focus()
+                      ?.toggleOrderedList()
+                      ?.run()
                   }
                   className="px-2 py-1 border rounded"
                 >
                   1. List
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => editor?.chain().focus().setParagraph().run()}
+                  onClick={() =>
+                    editorRef.current?.chain()?.focus()?.setParagraph()?.run()
+                  }
                   className="px-2 py-1 border rounded"
                 >
                   P
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
-                    editor?.chain().focus().toggleCodeBlock().run()
+                    editorRef.current
+                      ?.chain()
+                      ?.focus()
+                      ?.toggleCodeBlock()
+                      ?.run()
                   }
                   className="px-2 py-1 border rounded"
-                >{`</>`}</button>
+                >
+                  {"</>"}
+                </button>
+
                 <button
                   type="button"
                   onClick={handleInsertTable}
@@ -286,6 +319,7 @@ export default function TiptapEditorClient(props) {
                 >
                   Table
                 </button>
+
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
@@ -293,6 +327,7 @@ export default function TiptapEditorClient(props) {
                 >
                   Image
                 </button>
+
                 <input
                   ref={fileRef}
                   type="file"
@@ -303,7 +338,6 @@ export default function TiptapEditorClient(props) {
               </div>
 
               <div className="border rounded bg-white min-h-[240px]">
-                {/* EditorContent from dynamic import */}
                 {editor ? (
                   <EditorContent editor={editor} />
                 ) : (
@@ -320,25 +354,31 @@ export default function TiptapEditorClient(props) {
                     <button
                       type="button"
                       onClick={() => {
-                        const src = editor.getAttributes("image").src;
+                        const ed = editorRef.current;
+                        if (!ed) return;
+                        const src = ed.getAttributes("image").src;
                         if (src) window.open(src, "_blank", "noopener");
                       }}
                       className="px-2 py-1 border rounded"
                     >
                       Open
                     </button>
+
                     <label className="flex items-center gap-2">
                       Alt:
                       <input
                         type="text"
-                        defaultValue={editor.getAttributes("image").alt || ""}
+                        defaultValue={
+                          editorRef.current?.getAttributes("image")?.alt || ""
+                        }
                         onBlur={(e) => {
                           const alt = e.target.value || null;
-                          editor
-                            .chain()
+                          const ed = editorRef.current;
+                          if (!ed) return;
+                          ed.chain()
                             .focus()
                             .updateAttributes("image", {
-                              ...editor.getAttributes("image"),
+                              ...ed.getAttributes("image"),
                               alt,
                             })
                             .run();
@@ -346,18 +386,22 @@ export default function TiptapEditorClient(props) {
                         className="border px-2 py-1 rounded"
                       />
                     </label>
+
                     <label className="flex items-center gap-2">
                       Title:
                       <input
                         type="text"
-                        defaultValue={editor.getAttributes("image").title || ""}
+                        defaultValue={
+                          editorRef.current?.getAttributes("image")?.title || ""
+                        }
                         onBlur={(e) => {
                           const title = e.target.value || null;
-                          editor
-                            .chain()
+                          const ed = editorRef.current;
+                          if (!ed) return;
+                          ed.chain()
                             .focus()
                             .updateAttributes("image", {
-                              ...editor.getAttributes("image"),
+                              ...ed.getAttributes("image"),
                               title,
                             })
                             .run();
@@ -365,11 +409,14 @@ export default function TiptapEditorClient(props) {
                         className="border px-2 py-1 rounded"
                       />
                     </label>
+
                     <button
                       type="button"
-                      onClick={() =>
-                        editor.chain().focus().deleteSelection().run()
-                      }
+                      onClick={() => {
+                        const ed = editorRef.current;
+                        if (!ed) return;
+                        ed.chain().focus().deleteSelection().run();
+                      }}
                       className="px-2 py-1 border rounded"
                     >
                       Delete
