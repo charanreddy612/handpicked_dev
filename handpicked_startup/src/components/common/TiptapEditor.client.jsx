@@ -108,25 +108,58 @@ export default function TiptapEditorClient(props) {
           ].filter(Boolean);
 
           // Deduplicate by extension name (if available) to avoid duplicate-extension warnings
-          // --- replace previous dedupe with this robust dedupe ---
+        //   const rawExts = rawExts /* your existing array of extensions */ || [];
+
+          let counter = 0;
           const extMap = new Map();
+
           for (const ext of rawExts) {
             if (!ext) continue;
-            // try to derive a stable name
-            const name =
-              ext.name ||
-              (ext.constructor && ext.constructor.name) ||
-              (ext.content && ext.content.name) || // fallback check
-              String(ext);
+
+            // derive stable name safely without coercing the whole object to string
+            let name = undefined;
+            try {
+              if (typeof ext === "object" && ext !== null) {
+                if (typeof ext.name === "string" && ext.name) name = ext.name;
+                else if (
+                  ext.constructor &&
+                  typeof ext.constructor.name === "string"
+                )
+                  name = ext.constructor.name;
+                else if (ext.content && ext.content.name)
+                  name = ext.content.name;
+              } else if (typeof ext === "function" && ext.name) {
+                name = ext.name;
+              }
+            } catch (e) {
+              // defensive: if any property access throws, ignore and fallback below
+            }
+
+            if (!name) {
+              // generate a stable fallback (guaranteed string, no coercion of ext)
+              name = `__ext_fallback_${++counter}`;
+            }
 
             if (!extMap.has(name)) {
               extMap.set(name, ext);
             } else {
-              // duplicate — skip
-              console.debug("Skipping duplicate extension:", name);
+              // skip duplicates
+              // console.debug(`TipTap: skipping duplicate extension ${name}`);
             }
           }
+
           const extensions = Array.from(extMap.values());
+
+          // optional debug: list registered extension names (safe)
+          try {
+            // show what we actually registered
+            // eslint-disable-next-line no-console
+            console.debug(
+              "TipTap: registered extensions:",
+              Array.from(extMap.keys())
+            );
+          } catch (e) {}
+          // --- END REPLACEMENT ---
 
           // sync external valueHtml changes
           useEffect(() => {
