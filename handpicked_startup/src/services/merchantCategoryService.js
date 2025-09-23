@@ -108,7 +108,7 @@ export async function removeMerchantCategory(id) {
 // src/services/merchantCategoryService.js
 export async function getAllCategories() {
   try {
-    const res = await fetch(`/api/merchant-categories?limit=1000`);
+    const res = await fetch(`/merchant-categories?limit=1000`);
     if (!res.ok) throw new Error("Failed to fetch categories");
     const data = await res.json();
 
