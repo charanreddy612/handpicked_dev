@@ -1,5 +1,5 @@
 // src/components/merchants/EditMerchantModal.jsx
-import React, { useEffect, useState, useRef, Suspense } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   getMerchant,
   updateMerchant,
@@ -7,7 +7,7 @@ import {
 } from "../../services/merchantService";
 import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
-const TiptapEditor = React.lazy(() => import("../common/TipTapEditor.jsx"));
+import SafeQuill from "../common/SafeQuill.jsx";
 
 export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [faqs, setFaqs] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
 
-  // --- all categories list + loading state
+  // --- new: all categories list + loading state
   const [allCategories, setAllCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
 
@@ -40,9 +40,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
   const [tempQ, setTempQ] = useState("");
   const [tempA, setTempA] = useState("");
   const [tempSuggestion, setTempSuggestion] = useState("");
-
-  // TipTap editor JSON storage
-  const editorJsonRef = useRef(null);
+  const quillRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -100,20 +98,6 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
         setSuggestions(Array.isArray(m?.suggestions) ? m.suggestions : []);
 
         setLogoPreview(m?.logo_url || m?.logo || "");
-
-        // If server provided description_json, keep it for submit (optional)
-        if (m?.description_json) {
-          try {
-            editorJsonRef.current =
-              typeof m.description_json === "string"
-                ? JSON.parse(m.description_json)
-                : m.description_json;
-          } catch (e) {
-            editorJsonRef.current = null;
-          }
-        } else {
-          editorJsonRef.current = null;
-        }
       } catch (e) {
         console.error("Failed to load merchant:", e?.message || e);
         setForm({
@@ -154,8 +138,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     })();
     return () => {
       mounted = false;
-      if (logoPreview && logoPreview.startsWith("blob:"))
-        URL.revokeObjectURL(logoPreview);
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
     };
   }, [merchantId]); // eslint-disable-line
 
@@ -193,13 +176,13 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
-  function pickLogo(file) {
+  const pickLogo = (file) => {
     setLogo(file || null);
     if (logoPreview && logoPreview.startsWith("blob:"))
       URL.revokeObjectURL(logoPreview);
     if (file) setLogoPreview(URL.createObjectURL(file));
     else setLogoPreview(form?.logo_url || "");
-  }
+  };
 
   const addCategory = () => {
     const v = (categoryInput || "").trim();
@@ -338,10 +321,6 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     fd.append("faqs", JSON.stringify(faqs));
     fd.append("suggestions", JSON.stringify(suggestions));
 
-    // TipTap JSON (stringified) — recommended to store
-    const descJson = editorJsonRef.current || null;
-    if (descJson) fd.append("description_json", JSON.stringify(descJson));
-
     try {
       const { error } = await updateMerchant(merchantId, fd);
       if (error) throw new Error(error.message || "Update failed");
@@ -354,23 +333,119 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
     }
   };
 
-  // helper uploadImage for TiptapEditor
-  const uploadImage = async (file) => {
-    if (!file) return null;
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Image too large (max 10MB)");
-      return null;
-    }
-    try {
-      const url = await uploadMerchantImage(file);
-      return url || null;
-    } catch (err) {
-      console.error("Image upload failed:", err);
-      alert("Image upload failed. Please try again.");
-      return null;
-    }
+  // ✅ Custom image handler with ref forwarding
+  const imageHandler = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const url = await uploadMerchantImage(file);
+        if (url) {
+          const editor = quillRef.current?.getEditor();
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, "image", url);
+            editor.setSelection(range.index + 1);
+          }
+        }
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Image upload failed. Please try again.");
+      }
+    };
   };
 
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list", // ← only "list" here; toolbar still shows ordered/bullet
+    "link",
+    "image",
+  ];
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: { image: imageHandler },
+    },
+    history: {
+      delay: 500,
+      maxStack: 200,
+      userOnly: true,
+    },
+    keyboard: {
+      bindings: {
+        undo: {
+          key: "z",
+          shortKey: true,
+          handler() {
+            this.quill.history.undo();
+          },
+        },
+        redo: {
+          key: "y",
+          shortKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+        redoMac: {
+          key: "z",
+          shortKey: true,
+          shiftKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+      },
+    },
+  };
+
+  // ✅ Harden undo/redo with a direct keydown fallback on the editor root
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor?.();
+    if (!editor) return;
+
+    const root = editor.root;
+    const history = editor.getModule("history");
+    const isMac =
+      typeof navigator !== "undefined" &&
+      /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+    const onKeyDown = (e) => {
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      if (!ctrlOrCmd) return;
+
+      const key = e.key?.toLowerCase?.();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        history.undo();
+      } else if (key === "y" || (key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        history.redo();
+      }
+    };
+
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, [quillRef]);
+
+  // close on ESC
   useEscClose(onClose);
 
   if (loading || !form) {
@@ -572,21 +647,26 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
           </div>
           <div>
             <label className="block mb-1">Description</label>
-            <div className="h-80 border rounded bg-white p-2">
-              <Suspense fallback={<div>Loading editor…</div>}>
-                <TiptapEditor
-                  valueHtml={form.description_html}
-                  onUpdate={(html, json) => {
-                    setForm((f) => ({ ...f, description_html: html }));
-                    editorJsonRef.current = json;
-                  }}
-                  uploadImage={uploadImage}
-                  className="h-full"
-                />
-              </Suspense>
+            <div
+              className="
+                    h-80 border rounded bg-white
+                    [&_.ql-container]:h-full
+                    [&_.ql-editor]:h-full
+                    [&_.ql-editor]:overflow-y-auto"
+            >
+              <SafeQuill
+                ref={quillRef}
+                theme="snow"
+                value={form.description_html}
+                onChange={(val) =>
+                  setForm((f) => ({ ...f, description_html: val }))
+                }
+                modules={modules}
+                formats={formats}
+                className="h-full"
+              />
             </div>
           </div>
-
           <div>
             <label className="block mb-1">Table Content</label>
             <textarea

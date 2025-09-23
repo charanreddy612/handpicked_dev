@@ -5,107 +5,6 @@ import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 import DOMPurify from "dompurify";
 
-/**
- * Helper: convert a TipTap (ProseMirror) JSON node tree to HTML.
- * Supports: doc, paragraph, heading, text (with marks), image, bullet_list,
- * ordered_list, list_item, blockquote, codeBlock, horizontal_rule, hard_break, link.
- */
-function tiptapJsonToHtml(json) {
-  if (!json) return "";
-
-  const renderMarks = (text, marks = []) => {
-    if (!marks || !marks.length) return escapeHtml(text);
-    return marks.reduce((acc, mark) => {
-      if (mark.type === "bold" || mark.type === "strong")
-        return `<strong>${acc}</strong>`;
-      if (mark.type === "italic" || mark.type === "em")
-        return `<em>${acc}</em>`;
-      if (mark.type === "underline") return `<u>${acc}</u>`;
-      if (mark.type === "strike" || mark.type === "strike-through")
-        return `<s>${acc}</s>`;
-      if (mark.type === "code") return `<code>${acc}</code>`;
-      if (mark.type === "link" && mark.attrs?.href)
-        return `<a href="${escapeAttr(
-          mark.attrs.href
-        )}" target="_blank" rel="noopener noreferrer">${acc}</a>`;
-      return acc;
-    }, escapeHtml(text));
-  };
-
-  const renderNode = (node) => {
-    if (!node) return "";
-    const type = node.type;
-    const content = Array.isArray(node.content)
-      ? node.content.map(renderNode).join("")
-      : "";
-
-    switch (type) {
-      case "doc":
-        return content;
-      case "paragraph":
-        return `<p>${content}</p>`;
-      case "heading": {
-        const level = node.attrs?.level || 1;
-        const lvl = Math.min(6, Math.max(1, Number(level)));
-        return `<h${lvl}>${content}</h${lvl}>`;
-      }
-      case "text":
-        return renderMarks(node.text || "", node.marks);
-      case "image": {
-        const attrs = node.attrs || {};
-        const src = escapeAttr(attrs.src || "");
-        const alt = escapeAttr(attrs.alt || "");
-        const title = escapeAttr(attrs.title || "");
-        const width = attrs.width ? ` width="${escapeAttr(attrs.width)}"` : "";
-        const height = attrs.height
-          ? ` height="${escapeAttr(attrs.height)}"`
-          : "";
-        const style = attrs.style ? ` style="${escapeAttr(attrs.style)}"` : "";
-        return `<img src="${src}" alt="${alt}" title="${title}" ${width}${height}${style} />`;
-      }
-      case "bullet_list":
-        return `<ul>${content}</ul>`;
-      case "ordered_list":
-        return `<ol>${content}</ol>`;
-      case "list_item":
-        return `<li>${content}</li>`;
-      case "blockquote":
-        return `<blockquote>${content}</blockquote>`;
-      case "codeBlock":
-      case "fenced_code":
-        return `<pre><code>${escapeHtml(
-          node.content?.map?.((n) => n.text || "").join("") || ""
-        )}</code></pre>`;
-      case "horizontal_rule":
-        return `<hr />`;
-      case "hard_break":
-        return `<br/>`;
-      case "paragraph_with_class": // fallback
-        return `<p>${content}</p>`;
-      default:
-        // attempt to render children generically
-        return content || (node.text ? renderMarks(node.text, node.marks) : "");
-    }
-  };
-
-  // safe-guard: if root is string or already html
-  if (typeof json === "string") return escapeHtml(json);
-  if (json.type === "doc") return renderNode(json);
-  // if it's an array of nodes
-  if (Array.isArray(json)) return json.map(renderNode).join("");
-  return renderNode(json);
-}
-
-function escapeHtml(str = "") {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-function escapeAttr(str = "") {
-  return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
 export default function ViewMerchantModal({ merchantId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [m, setM] = useState(null);
@@ -233,29 +132,6 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
     return list.map((it) => resolveCategoryName(it)).join(", ");
   })();
 
-  // Build HTML for description: prefer description_html; fall back to description_json; then description.
-  const rawHtml = (() => {
-    if (m?.description_html) return m.description_html;
-    if (m?.description_json) {
-      try {
-        const json =
-          typeof m.description_json === "string"
-            ? JSON.parse(m.description_json)
-            : m.description_json;
-        return tiptapJsonToHtml(json);
-      } catch (e) {
-        console.warn("Failed to parse description_json", e);
-        return m.description || "";
-      }
-    }
-    return m?.description || "";
-  })();
-
-  // Allow width/height/style/alt/title for images and style attribute via ADD_ATTR
-  const sanitizedHtml = DOMPurify.sanitize(rawHtml || "—", {
-    ADD_ATTR: ["width", "height", "style", "alt", "title"],
-  });
-
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-6xl rounded shadow-lg p-6 max-h-[95vh] overflow-y-auto">
@@ -320,7 +196,11 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
           <Field label="Description">
             <div
               className="my-6 prose max-w-none prose-img:rounded prose-img:max-h-[400px] prose-img:object-contain"
-              dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(
+                  m?.description_html || m?.description || "—"
+                ),
+              }}
             />
           </Field>
           <Field label="Table Content">

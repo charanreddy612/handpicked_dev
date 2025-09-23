@@ -1,17 +1,14 @@
 // src/components/merchants/AddMerchantModal.jsx
-import React, { useEffect, useState, useRef, Suspense } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   addMerchant,
   uploadMerchantImage,
 } from "../../services/merchantService";
 import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
-
-// Use shared Tiptap editor component
-const TiptapEditor = React.lazy(() => import("../common/TipTapEditor.jsx"));
+import SafeQuill from "../common/SafeQuill.jsx";
 
 export default function AddMerchantModal({ onClose, onSave }) {
-  // ------------- original state kept intact -------------
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -40,31 +37,30 @@ export default function AddMerchantModal({ onClose, onSave }) {
     show_at_search_bar: false,
     extension_active: false,
     extension_mandatory: false,
-    is_header_2: false,
-    coupon_icon_visibility: "visible",
-    store_status_visibility: "visible",
+    is_header_2: false, // second Is Header seen in grid
+    coupon_icon_visibility: "visible", // visible | invisible
+    store_status_visibility: "visible", // visible | invisible
   });
 
   const [logo, setLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
 
-  const [categories, setCategories] = useState([]);
-  const [allCategories, setAllCategories] = useState([]);
+  // --- categories state (selected) and all available categories (from DB) ---
+  const [categories, setCategories] = useState([]); // selected category names (was inline-added)
+  const [allCategories, setAllCategories] = useState([]); // fetched from backend
   const [loadingCats, setLoadingCats] = useState(true);
 
-  const [brandCategories, setBrandCategories] = useState([]);
-  const [couponH2Blocks, setCouponH2Blocks] = useState([]);
-  const [couponH3Blocks, setCouponH3Blocks] = useState([]);
-  const [faqs, setFaqs] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
+  const [brandCategories, setBrandCategories] = useState([]); // inline-added
+
+  const [couponH2Blocks, setCouponH2Blocks] = useState([]); // [{heading, description}]
+  const [couponH3Blocks, setCouponH3Blocks] = useState([]); // [{heading, description}]
+  const [faqs, setFaqs] = useState([]); // [{question, answer}]
+  const [suggestions, setSuggestions] = useState([]); // [text]
 
   const [saving, setSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const quillRef = useRef(null);
 
-  // Editor json storage (TipTap JSON saved here for submit)
-  const editorJsonRef = useRef(null);
-
-  // ------------- fetch categories (unchanged) -------------
+  // Fetch available categories from backend once
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -94,8 +90,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
       mounted = false;
     };
   }, []);
-
-  // ------------- form helpers (unchanged) -------------
+  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
@@ -113,18 +108,44 @@ export default function AddMerchantModal({ onClose, onSave }) {
     }
   };
 
+  // Add typed category to selected categories (and clear input)
   const addCategory = async () => {
     const v = String(form.category_input || "").trim();
     if (!v) return;
-    if (!categories.includes(v)) setCategories((arr) => [...arr, v]);
+    if (!categories.includes(v)) {
+      setCategories((arr) => [...arr, v]);
+    }
     setForm((f) => ({ ...f, category_input: "" }));
+
+    // Optional: persist new category to backend and add to allCategories
+    // Uncomment & edit endpoint if you'd like to create categories server-side:
+    /*
+    try {
+      const resp = await fetch('/api/merchant-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: v })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const cname = data?.data?.name ?? v;
+        setAllCategories(prev => prev.includes(cname) ? prev : [...prev, cname]);
+      }
+    } catch (err) {
+      console.warn('persist category failed (non-fatal):', err);
+    }
+    */
   };
-  const removeCategory = (v) =>
+
+  const removeCategory = (v) => {
     setCategories((arr) => arr.filter((x) => x !== v));
-  const onSelectChange = (e) =>
-    setCategories(
-      Array.from(e.target.selectedOptions || []).map((o) => o.value)
-    );
+  };
+
+  // Handler for native <select multiple>
+  const onSelectChange = (e) => {
+    const opts = Array.from(e.target.selectedOptions || []).map((o) => o.value);
+    setCategories(opts);
+  };
 
   const [brandCategoryInput, setBrandCategoryInput] = useState("");
   const addBrandCategory = () => {
@@ -133,8 +154,9 @@ export default function AddMerchantModal({ onClose, onSave }) {
     setBrandCategories((arr) => [...arr, v]);
     setBrandCategoryInput("");
   };
-  const removeBrandCategory = (v) =>
+  const removeBrandCategory = (v) => {
     setBrandCategories((arr) => arr.filter((x) => x !== v));
+  };
 
   const [tempHeading, setTempHeading] = useState("");
   const [tempDesc, setTempDesc] = useState("");
@@ -147,8 +169,9 @@ export default function AddMerchantModal({ onClose, onSave }) {
     setTempHeading("");
     setTempDesc("");
   };
-  const removeCouponH2 = (i) =>
+  const removeCouponH2 = (i) => {
     setCouponH2Blocks((arr) => arr.filter((_, idx) => idx !== i));
+  };
 
   const [tempHeading3, setTempHeading3] = useState("");
   const [tempDesc3, setTempDesc3] = useState("");
@@ -161,8 +184,9 @@ export default function AddMerchantModal({ onClose, onSave }) {
     setTempHeading3("");
     setTempDesc3("");
   };
-  const removeCouponH3 = (i) =>
+  const removeCouponH3 = (i) => {
     setCouponH3Blocks((arr) => arr.filter((_, idx) => idx !== i));
+  };
 
   const [tempQ, setTempQ] = useState("");
   const [tempA, setTempA] = useState("");
@@ -175,7 +199,9 @@ export default function AddMerchantModal({ onClose, onSave }) {
     setTempQ("");
     setTempA("");
   };
-  const removeFaq = (i) => setFaqs((arr) => arr.filter((_, idx) => idx !== i));
+  const removeFaq = (i) => {
+    setFaqs((arr) => arr.filter((_, idx) => idx !== i));
+  };
 
   const [tempSuggestion, setTempSuggestion] = useState("");
   const addSuggestion = () => {
@@ -183,13 +209,16 @@ export default function AddMerchantModal({ onClose, onSave }) {
     setSuggestions((arr) => [...arr, tempSuggestion.trim()]);
     setTempSuggestion("");
   };
-  const removeSuggestion = (i) =>
+  const removeSuggestion = (i) => {
     setSuggestions((arr) => arr.filter((_, idx) => idx !== i));
+  };
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const pickLogo = (file) => {
+    setLogo(file || null);
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    if (file) setLogoPreview(URL.createObjectURL(file));
+    else setLogoPreview("");
+  };
 
   const resetAll = () => {
     setForm({
@@ -231,31 +260,8 @@ export default function AddMerchantModal({ onClose, onSave }) {
     setFaqs([]);
     setSuggestions([]);
     pickLogo(null);
-    editorJsonRef.current = null;
   };
 
-  // ------------- image upload helper used by TiptapEditor -------------
-  // TiptapEditor will call this when user picks an image inside the editor.
-  const uploadImage = async (file) => {
-    if (!file) return null;
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Image too large (max 10MB)");
-      return null;
-    }
-    setIsUploading(true);
-    try {
-      const url = await uploadMerchantImage(file); // must return public URL
-      return url || null;
-    } catch (err) {
-      console.error("Image upload failed:", err);
-      alert("Image upload failed. Please try again.");
-      return null;
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // ------------- submit -------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (saving) return;
@@ -263,7 +269,6 @@ export default function AddMerchantModal({ onClose, onSave }) {
 
     setSaving(true);
     const fd = new FormData();
-
     fd.append("name", form.name);
     fd.append("slug", form.slug);
     fd.append("web_url", form.web_url || "");
@@ -296,16 +301,13 @@ export default function AddMerchantModal({ onClose, onSave }) {
 
     if (logo) fd.append("logo", logo);
 
+    // arrays as JSON
     fd.append("category_names", JSON.stringify(categories));
     fd.append("brand_categories", JSON.stringify(brandCategories));
     fd.append("coupon_h2_blocks", JSON.stringify(couponH2Blocks));
     fd.append("coupon_h3_blocks", JSON.stringify(couponH3Blocks));
     fd.append("faqs", JSON.stringify(faqs));
     fd.append("suggestions", JSON.stringify(suggestions));
-
-    // TipTap JSON (stringified) — recommended to store
-    const descJson = editorJsonRef.current || null;
-    if (descJson) fd.append("description_json", JSON.stringify(descJson));
 
     try {
       const { error } = await addMerchant(fd);
@@ -319,7 +321,6 @@ export default function AddMerchantModal({ onClose, onSave }) {
     }
   };
 
-  // Radio / Bool helpers (unchanged)
   const Radio = ({ name, value, label }) => (
     <label className="flex items-center gap-2">
       <input
@@ -345,9 +346,121 @@ export default function AddMerchantModal({ onClose, onSave }) {
     </label>
   );
 
+  // ✅ Custom image handler with ref forwarding
+  const imageHandler = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const url = await uploadMerchantImage(file);
+        if (url) {
+          const editor = quillRef.current?.getEditor();
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, "image", url);
+            editor.setSelection(range.index + 1);
+          }
+        }
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Image upload failed. Please try again.");
+      }
+    };
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list", // ← only "list" here; toolbar still shows ordered/bullet
+    "link",
+    "image",
+  ];
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: { image: imageHandler },
+    },
+    history: {
+      delay: 500,
+      maxStack: 200,
+      userOnly: true,
+    },
+    keyboard: {
+      bindings: {
+        undo: {
+          key: "z",
+          shortKey: true,
+          handler() {
+            this.quill.history.undo();
+          },
+        },
+        redo: {
+          key: "y",
+          shortKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+        redoMac: {
+          key: "z",
+          shortKey: true,
+          shiftKey: true,
+          handler() {
+            this.quill.history.redo();
+          },
+        },
+      },
+    },
+  };
+
+  // ✅ Harden undo/redo with a direct keydown fallback on the editor root
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor?.();
+    if (!editor) return;
+
+    const root = editor.root;
+    const history = editor.getModule("history");
+    const isMac =
+      typeof navigator !== "undefined" &&
+      /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+    const onKeyDown = (e) => {
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      if (!ctrlOrCmd) return;
+
+      const key = e.key?.toLowerCase?.();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        history.undo();
+      } else if (key === "y" || (key === "z" && e.shiftKey)) {
+        e.preventDefault();
+        history.redo();
+      }
+    };
+
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
+  }, [quillRef]);
+
+  // close on ESC
   useEscClose(onClose);
 
-  // ------------- render -------------
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-6xl rounded shadow-lg p-6 max-h-[95vh] overflow-y-auto">
@@ -382,9 +495,11 @@ export default function AddMerchantModal({ onClose, onSave }) {
             />
           </div>
 
-          {/* Category + Add */}
+          {/* Category + Add category (REPLACED: native multi-select + chips + typed add) */}
           <div>
             <label className="block mb-1">Category</label>
+
+            {/* Dropdown add UX */}
             <div className="flex gap-2">
               <select
                 name="category_input"
@@ -405,6 +520,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
                   </option>
                 ))}
               </select>
+
               <button
                 type="button"
                 className="bg-blue-600 text-white px-3 py-2 rounded"
@@ -419,6 +535,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
                 + Add
               </button>
             </div>
+            {/* Selected chips */}
             {categories.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {categories.map((c) => (
@@ -479,7 +596,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
             />
           </div>
 
-          {/* Logo */}
+          {/* Store Logo */}
           <div>
             <div className="mb-1">Store Logo</div>
             <div className="flex items-start gap-4">
@@ -539,7 +656,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
             />
           </div>
 
-          {/* Side Description (left as textarea) */}
+          {/* Rich text blocks */}
           <div>
             <label className="block mb-1">Side Description</label>
             <textarea
@@ -550,27 +667,28 @@ export default function AddMerchantModal({ onClose, onSave }) {
               className="w-full border px-3 py-2 rounded"
             />
           </div>
-
-          {/* Description (TiptapEditor component) */}
           <div>
             <label className="block mb-1">Description</label>
-            <div className="h-80 border rounded bg-white p-2">
-              {/* Use the shared TiptapEditor. It calls onUpdate(html,json) */}
-              <Suspense fallback={<div>Loading editor…</div>}>
-                <TiptapEditor
-                  valueHtml={form.description_html}
-                  onUpdate={(html, json) => {
-                    setForm((f) => ({ ...f, description_html: html }));
-                    editorJsonRef.current = json;
-                  }}
-                  uploadImage={uploadImage}
-                  className="h-full"
-                />
-              </Suspense>
+            <div
+              className="
+                    h-80 border rounded bg-white
+                    [&_.ql-container]:h-full
+                    [&_.ql-editor]:h-full
+                    [&_.ql-editor]:overflow-y-auto"
+            >
+              <SafeQuill
+                ref={quillRef}
+                theme="snow"
+                value={form.description_html}
+                onChange={(val) =>
+                  setForm((f) => ({ ...f, description_html: val }))
+                }
+                modules={modules}
+                formats={formats}
+                className="h-full"
+              />
             </div>
           </div>
-
-          {/* table content */}
           <div>
             <label className="block mb-1">Table Content</label>
             <textarea
@@ -594,7 +712,6 @@ export default function AddMerchantModal({ onClose, onSave }) {
             />
           </div>
 
-          {/* Brand categories */}
           <div>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
@@ -643,7 +760,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
             </div>
           </div>
 
-          {/* toggles grid */}
+          {/* Toggles grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <Bool name="sidebar" label="Sidebar" />
             <Bool name="home" label="Home" />
@@ -694,7 +811,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
             </div>
           </div>
 
-          {/* coupon h2/h3, faqs, suggestions (unchanged) */}
+          {/* Sectioned content with [+] Add */}
           <div className="border rounded p-3">
             <div className="font-medium mb-2">Coupon H2 & Descriptions</div>
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -888,12 +1005,4 @@ export default function AddMerchantModal({ onClose, onSave }) {
       </div>
     </div>
   );
-
-  // helpers used inside JSX but declared after render to keep file compact
-  function pickLogo(file) {
-    setLogo(file || null);
-    if (logoPreview) URL.revokeObjectURL(logoPreview);
-    if (file) setLogoPreview(URL.createObjectURL(file));
-    else setLogoPreview("");
-  }
 }
