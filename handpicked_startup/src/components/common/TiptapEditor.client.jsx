@@ -34,7 +34,7 @@ export default function TiptapEditorClient(props) {
 
         if (!mounted) return;
 
-        // Extract actual exports (.default for ESM CJS interop)
+        // Safely extract exports (handle ESM/CJS interop)
         const EditorContent =
           tiptapReactModule.EditorContent ??
           tiptapReactModule.default?.EditorContent;
@@ -64,46 +64,67 @@ export default function TiptapEditorClient(props) {
             uploadImage: upImg,
             className: cls,
           } = innerProps;
-          const editor = useEditor({
-            extensions: [
-              Starter.configure
+
+          // Build raw extensions with feature detection
+          const rawExts = [
+            Starter &&
+              (Starter.configure
                 ? Starter.configure({ history: true })
-                : Starter,
-              UnderlineExt,
-              LinkExt &&
-                (LinkExt.configure
-                  ? LinkExt.configure({ openOnClick: true })
-                  : LinkExt),
-              ImageExtDef &&
-                (ImageExtDef.extend
-                  ? ImageExtDef.extend({
-                      addAttributes() {
-                        return {
-                          src: {},
-                          alt: { default: null },
-                          title: { default: null },
-                          width: { default: null },
-                          height: { default: null },
-                        };
-                      },
-                    })
-                  : ImageExtDef),
-              TableExt &&
-                (TableExt.configure
-                  ? TableExt.configure({ resizable: true })
-                  : TableExt),
-              TableRowExt,
-              TableHeaderExt,
-              TableCellExt,
-              TextAlignExt &&
-                (TextAlignExt.configure
-                  ? TextAlignExt.configure({ types: ["heading", "paragraph"] })
-                  : TextAlignExt),
-              PlaceholderExt &&
-                (PlaceholderExt.configure
-                  ? PlaceholderExt.configure({ placeholder: "Write here..." })
-                  : PlaceholderExt),
-            ].filter(Boolean),
+                : Starter),
+            UnderlineExt,
+            LinkExt &&
+              (LinkExt.configure
+                ? LinkExt.configure({ openOnClick: true })
+                : LinkExt),
+            ImageExtDef &&
+              (ImageExtDef.extend
+                ? ImageExtDef.extend({
+                    addAttributes() {
+                      return {
+                        src: {},
+                        alt: { default: null },
+                        title: { default: null },
+                        width: { default: null },
+                        height: { default: null },
+                      };
+                    },
+                  })
+                : ImageExtDef),
+            TableExt &&
+              (TableExt.configure
+                ? TableExt.configure({ resizable: true })
+                : TableExt),
+            TableRowExt,
+            TableHeaderExt,
+            TableCellExt,
+            TextAlignExt &&
+              (TextAlignExt.configure
+                ? TextAlignExt.configure({ types: ["heading", "paragraph"] })
+                : TextAlignExt),
+            PlaceholderExt &&
+              (PlaceholderExt.configure
+                ? PlaceholderExt.configure({ placeholder: "Write here..." })
+                : PlaceholderExt),
+          ].filter(Boolean);
+
+          // Deduplicate by extension name (if available) to avoid duplicate-extension warnings
+          const seen = new Set();
+          const extensions = rawExts.filter((ext) => {
+            try {
+              const name =
+                ext.name ||
+                (ext.constructor && ext.constructor.name) ||
+                String(ext);
+              if (seen.has(name)) return false;
+              seen.add(name);
+              return true;
+            } catch {
+              return true;
+            }
+          });
+
+          const editor = useEditor({
+            extensions,
             content: vHtml || "<p></p>",
             onUpdate: ({ editor }) => {
               const html = editor.getHTML();
@@ -112,15 +133,17 @@ export default function TiptapEditorClient(props) {
             },
           });
 
-          // image upload handler via hidden input
-          const fileRef = useRef(null);
+          // sync external valueHtml changes
           useEffect(() => {
             if (!editor) return;
             if (vHtml && editor.getHTML() !== vHtml) {
               editor.commands.setContent(vHtml, false);
             }
+            // eslint-disable-next-line react-hooks/exhaustive-deps
           }, [vHtml, editor]);
 
+          // image upload handler via hidden input
+          const fileRef = useRef(null);
           const insertImageFile = async (file) => {
             if (!file) return;
             if (!upImg) {
@@ -134,20 +157,45 @@ export default function TiptapEditorClient(props) {
               }
               const url = await upImg(file);
               if (!url) throw new Error("no url returned");
-              editor
-                .chain()
-                .focus()
-                .setImage({ src: url, alt: file.name })
-                .run();
+              if (editor && editor.chain) {
+                editor
+                  .chain()
+                  .focus()
+                  .setImage({ src: url, alt: file.name })
+                  .run();
+              }
             } catch (e) {
               console.error("Image upload failed", e);
               alert("Image upload failed");
             }
           };
 
+          // guarded insert table
+          const handleInsertTable = () => {
+            try {
+              if (!editor || !editor.commands)
+                throw new Error("editor not ready");
+              // some builds may expose nested commands; guard for function
+              if (typeof editor.commands.insertTable === "function") {
+                editor
+                  .chain()
+                  .focus()
+                  .insertTable({ rows: 2, cols: 2, withHeaderRow: true })
+                  .run();
+              } else {
+                // fallback: try using createTable command path (older/newer variations)
+                console.error("Table command not available on editor.commands");
+                alert("Table feature not available in this build.");
+              }
+            } catch (err) {
+              console.error("Insert table failed:", err);
+              alert("Table feature not available.");
+            }
+          };
+
           return (
             <div className={`tiptap-root ${cls}`}>
-              <div className="mb-2 flex gap-2">
+              <div className="mb-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => editor?.chain().focus().toggleBold().run()}
@@ -205,13 +253,7 @@ export default function TiptapEditorClient(props) {
                 >{`</>`}</button>
                 <button
                   type="button"
-                  onClick={() =>
-                    editor
-                      ?.chain()
-                      .focus()
-                      .insertTable({ rows: 2, cols: 2, withHeaderRow: true })
-                      .run()
-                  }
+                  onClick={handleInsertTable}
                   className="px-2 py-1 border rounded"
                 >
                   Table
@@ -233,7 +275,12 @@ export default function TiptapEditorClient(props) {
               </div>
 
               <div className="border rounded bg-white min-h-[240px]">
-                <EditorContent editor={editor} />
+                {/* EditorContent from dynamic import */}
+                {editor ? (
+                  <EditorContent editor={editor} />
+                ) : (
+                  <div className="p-4">Loading editor...</div>
+                )}
               </div>
 
               {editor && BubbleMenuComp && (
