@@ -1,5 +1,5 @@
 // src/components/merchants/AddMerchantModal.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import {
   addMerchant,
   uploadMerchantImage,
@@ -8,13 +8,7 @@ import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
 
 // Use shared Tiptap editor component
-import React, { Suspense } from "react";
 const TiptapEditor = React.lazy(() => import("../common/TipTapEditor.jsx"));
-/**
- * Drop-in replacement: preserves original state/submit logic.
- * Requirements:
- *  npm i @tiptap/react @tiptap/starter-kit @tiptap/extension-underline @tiptap/extension-link @tiptap/extension-image @tiptap/extension-table @tiptap/extension-table-row @tiptap/extension-table-cell @tiptap/extension-table-header @tiptap/extension-text-align @tiptap/extension-placeholder
- */
 
 export default function AddMerchantModal({ onClose, onSave }) {
   // ------------- original state kept intact -------------

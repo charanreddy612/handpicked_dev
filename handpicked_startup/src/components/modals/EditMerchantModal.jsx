@@ -1,5 +1,5 @@
 // src/components/merchants/EditMerchantModal.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import {
   getMerchant,
   updateMerchant,
@@ -7,7 +7,6 @@ import {
 } from "../../services/merchantService";
 import { getAllCategories } from "../../services/merchantCategoryService.js";
 import useEscClose from "../hooks/useEscClose";
-import React, { Suspense } from "react";
 const TiptapEditor = React.lazy(() => import("../common/TipTapEditor.jsx"));
 
 export default function EditMerchantModal({ merchantId, onClose, onSave }) {
