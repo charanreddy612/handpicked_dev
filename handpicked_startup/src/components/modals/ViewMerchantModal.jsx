@@ -142,27 +142,14 @@ export default function ViewMerchantModal({ merchantId, onClose }) {
         setLoadingCats(true);
         const res = await getAllCategories();
         if (!mounted) return;
-        if (res.length === 0) {
-          console.error("Failed to load categories", res.status);
+        if (!Array.isArray(res) || res.length === 0) {
           setAllCategories([]);
           return;
         }
-        const json = await res.json();
-        const raw = Array.isArray(json?.data)
-          ? json.data
-          : Array.isArray(json)
-          ? json
-          : json?.categories ?? [];
-
-        // normalize to objects: { id?, name }
-        const normalized = raw.map((c) =>
-          typeof c === "string"
-            ? { id: undefined, name: c }
-            : {
-                id: c.id ?? c._id ?? undefined,
-                name: c.name ?? c.category_name ?? String(c.id ?? ""),
-              }
+        const normalized = res.map((c) =>
+          typeof c === "string" ? c : c.name ?? c.category_name ?? String(c.id)
         );
+
         setAllCategories(normalized);
       } catch (err) {
         console.error("Could not fetch categories:", err);

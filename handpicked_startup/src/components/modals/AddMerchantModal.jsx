@@ -70,21 +70,18 @@ export default function AddMerchantModal({ onClose, onSave }) {
     (async () => {
       try {
         setLoadingCats(true);
-        const res = await getAllCategories();
+        const res = await getAllCategories(); // already returns an array
         if (!mounted) return;
-        if (res.length === 0) {
+
+        if (!Array.isArray(res) || res.length === 0) {
           setAllCategories([]);
           return;
         }
-        const json = await res.json();
-        const raw = Array.isArray(json?.data)
-          ? json.data
-          : Array.isArray(json)
-          ? json
-          : json?.categories ?? [];
-        const normalized = raw.map((c) =>
+
+        const normalized = res.map((c) =>
           typeof c === "string" ? c : c.name ?? c.category_name ?? String(c.id)
         );
+
         setAllCategories(normalized);
       } catch (err) {
         console.error("Could not fetch categories:", err);

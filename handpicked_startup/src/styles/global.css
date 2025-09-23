@@ -1,6 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import 'tippy.js/dist/tippy.css';
+
 .menu {
   list-style: none;
   padding: 0;

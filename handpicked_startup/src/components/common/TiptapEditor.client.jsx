@@ -2,13 +2,8 @@
 import React, { useEffect, useState, useRef } from "react";
 
 /**
- * Drop-in client-only TipTap loader with:
- * - heading selector fixed
- * - dedupe of extensions
- * - guarded table support
- * - image inspector panel positioned to the right (avoids overlap)
- *
- * Props: valueHtml, onUpdate(html,json), uploadImage(file)->url, className
+ * Client-only TipTap loader (drop-in).
+ * Props: { valueHtml = "", onUpdate(html,json), uploadImage(file)->url, className }
  */
 export default function TiptapEditorClient(props) {
   const { valueHtml = "", onUpdate, uploadImage, className = "" } = props;
@@ -19,38 +14,37 @@ export default function TiptapEditorClient(props) {
 
     (async () => {
       try {
-        // dynamic imports (browser-only)
-        const tiptapModule = await import("@tiptap/react");
-        const StarterKitModule = await import("@tiptap/starter-kit");
-        const UnderlineModule = await import("@tiptap/extension-underline");
-        const LinkModule = await import("@tiptap/extension-link");
-        const ImageModule = await import("@tiptap/extension-image");
-        const TableModule = await import("@tiptap/extension-table");
-        const TableRowModule = await import("@tiptap/extension-table-row");
-        const TableCellModule = await import("@tiptap/extension-table-cell");
-        const TableHeaderModule = await import(
-          "@tiptap/extension-table-header"
-        );
-        const TextAlignModule = await import("@tiptap/extension-text-align");
-        const PlaceholderModule = await import("@tiptap/extension-placeholder");
+        // dynamic imports (client only)
+        const tiptap = await import("@tiptap/react");
+        const StarterKitMod = await import("@tiptap/starter-kit");
+        const UnderlineMod = await import("@tiptap/extension-underline");
+        const LinkMod = await import("@tiptap/extension-link");
+        const ImageMod = await import("@tiptap/extension-image");
+        const TableMod = await import("@tiptap/extension-table");
+        const TableRowMod = await import("@tiptap/extension-table-row");
+        const TableCellMod = await import("@tiptap/extension-table-cell");
+        const TableHeaderMod = await import("@tiptap/extension-table-header");
+        const TextAlignMod = await import("@tiptap/extension-text-align");
+        const PlaceholderMod = await import("@tiptap/extension-placeholder");
 
         if (!mounted) return;
 
         const EditorContent =
-          tiptapModule.EditorContent ?? tiptapModule.default?.EditorContent;
-        const useEditor =
-          tiptapModule.useEditor ?? tiptapModule.default?.useEditor;
+          tiptap.EditorContent ?? tiptap.default?.EditorContent;
+        const useEditor = tiptap.useEditor ?? tiptap.default?.useEditor;
+        const BubbleMenuComp =
+          tiptap.BubbleMenu ?? tiptap.default?.BubbleMenu ?? null;
 
-        const Starter = StarterKitModule.default ?? StarterKitModule;
-        const Underline = UnderlineModule.default ?? UnderlineModule;
-        const LinkExt = LinkModule.default ?? LinkModule;
-        const ImageExt = ImageModule.default ?? ImageModule;
-        const TableExt = TableModule.default ?? TableModule;
-        const TableRowExt = TableRowModule.default ?? TableRowModule;
-        const TableCellExt = TableCellModule.default ?? TableCellModule;
-        const TableHeaderExt = TableHeaderModule.default ?? TableHeaderModule;
-        const TextAlignExt = TextAlignModule.default ?? TextAlignModule;
-        const PlaceholderExt = PlaceholderModule.default ?? PlaceholderModule;
+        const StarterKit = StarterKitMod.default ?? StarterKitMod;
+        const Underline = UnderlineMod.default ?? UnderlineMod;
+        const LinkExt = LinkMod.default ?? LinkMod;
+        const ImageExt = ImageMod.default ?? ImageMod;
+        const TableExt = TableMod.default ?? TableMod;
+        const TableRowExt = TableRowMod.default ?? TableRowMod;
+        const TableCellExt = TableCellMod.default ?? TableCellMod;
+        const TableHeaderExt = TableHeaderMod.default ?? TableHeaderMod;
+        const TextAlignExt = TextAlignMod.default ?? TextAlignMod;
+        const PlaceholderExt = PlaceholderMod.default ?? PlaceholderMod;
 
         function EditorInnerCmp({
           valueHtml: vHtml,
@@ -58,19 +52,31 @@ export default function TiptapEditorClient(props) {
           uploadImage: upImg,
           className: cls,
         }) {
-          // build candidate extensions array
-          const candidateExts = [
-            Starter &&
-              (Starter.configure
-                ? Starter.configure({ history: true })
-                : Starter),
+          // build extensions list
+          const candidates = [
+            StarterKit &&
+              (StarterKit.configure
+                ? StarterKit.configure({ history: true })
+                : StarterKit),
             Underline,
             LinkExt &&
               (LinkExt.configure
                 ? LinkExt.configure({ openOnClick: true })
                 : LinkExt),
-            ImageExt,
-            // include table extensions but they might not expose the same command set in all builds
+            ImageExt &&
+              (ImageExt.extend
+                ? ImageExt.extend({
+                    addAttributes() {
+                      return {
+                        src: {},
+                        alt: { default: null },
+                        title: { default: null },
+                        width: { default: null },
+                        height: { default: null },
+                      };
+                    },
+                  })
+                : ImageExt),
             TableExt &&
               (TableExt.configure
                 ? TableExt.configure({ resizable: true })
@@ -88,24 +94,21 @@ export default function TiptapEditorClient(props) {
                 : PlaceholderExt),
           ].filter(Boolean);
 
-          // Deduplicate by extension name (safe, avoids coercion errors)
-          const map = new Map();
-          let tempCounter = 0;
-          for (const ex of candidateExts) {
-            let name = undefined;
+          // dedupe by stable name to avoid "Duplicate extension" and runtime conflicts
+          const extMap = new Map();
+          let fallbackCounter = 0;
+          for (const ex of candidates) {
+            let name;
             try {
               if (ex && typeof ex === "object" && ex.name) name = ex.name;
-              else if (ex && typeof ex === "function" && ex.name)
-                name = ex.name;
+              else if (typeof ex === "function" && ex.name) name = ex.name;
               else if (ex && ex.constructor && ex.constructor.name)
                 name = ex.constructor.name;
-            } catch (e) {
-              /* ignore */
-            }
-            if (!name) name = `__ext_fallback_${++tempCounter}`;
-            if (!map.has(name)) map.set(name, ex);
+            } catch (e) {}
+            if (!name) name = `__ext_fallback_${++fallbackCounter}`;
+            if (!extMap.has(name)) extMap.set(name, ex);
           }
-          const extensions = Array.from(map.values());
+          const extensions = Array.from(extMap.values());
 
           const editor = useEditor({
             extensions,
@@ -116,21 +119,19 @@ export default function TiptapEditorClient(props) {
                 const json = editor.getJSON();
                 onUpd?.(html, json);
               } catch (err) {
-                console.error("onUpdate error", err);
+                console.error("editor.onUpdate error", err);
               }
             },
           });
 
-          // sync external changes
+          // sync external value changes
           useEffect(() => {
             if (!editor) return;
             if (vHtml && editor.getHTML() !== vHtml) {
               editor.commands.setContent(vHtml, false);
             }
-            // eslint-disable-next-line react-hooks/exhaustive-deps
           }, [vHtml, editor]);
 
-          // image upload
           const fileRef = useRef(null);
           const insertImageFile = async (file) => {
             if (!file) return;
@@ -156,33 +157,31 @@ export default function TiptapEditorClient(props) {
             }
           };
 
-          // image inspector (right-side panel)
+          // simple image inspector (right side) — non-blocking
           const rootRef = useRef(null);
           const [selectedImage, setSelectedImage] = useState(null);
           useEffect(() => {
             if (!rootRef.current) return;
             const root = rootRef.current;
-            const onClick = (ev) => {
+            const clickHandler = (e) => {
               const img =
-                ev.target && ev.target.tagName === "IMG" ? ev.target : null;
+                e.target && e.target.tagName === "IMG" ? e.target : null;
               if (!img) {
                 setSelectedImage(null);
                 return;
               }
               setSelectedImage({
-                src: img.getAttribute("src"),
-                alt: img.getAttribute("alt") || "",
-                title: img.getAttribute("title") || "",
+                src: img.src,
+                alt: img.alt || "",
+                title: img.title || "",
               });
             };
-            root.addEventListener("click", onClick);
-            return () => root.removeEventListener("click", onClick);
+            root.addEventListener("click", clickHandler);
+            return () => root.removeEventListener("click", clickHandler);
           }, [editor]);
 
           const updateImageAttrs = (patch) => {
-            if (!selectedImage) return;
             try {
-              // best-effort: update attributes on currently selected image or fallback
               editor.chain().focus().updateAttributes("image", patch).run();
               setSelectedImage((s) => ({ ...s, ...patch }));
             } catch (err) {
@@ -190,53 +189,59 @@ export default function TiptapEditorClient(props) {
             }
           };
 
-          // heading selector handler — use setNode for paragraph and toggleHeading for headings
-          const handleHeadingChange = (value) => {
+          const handleInsertTable = () => {
+            try {
+              if (!editor) throw new Error("editor not ready");
+              // prefer chain().insertTable if available
+              if (
+                editor.chain &&
+                typeof editor.chain().insertTable === "function"
+              ) {
+                editor
+                  .chain()
+                  .focus()
+                  .insertTable({ rows: 2, cols: 2, withHeaderRow: true })
+                  .run();
+                return;
+              }
+              // fallback detection for various builds
+              if (
+                editor.commands &&
+                typeof editor.commands.insertTable === "function"
+              ) {
+                editor.commands.insertTable({
+                  rows: 2,
+                  cols: 2,
+                  withHeaderRow: true,
+                });
+                return;
+              }
+              alert("Table feature not available in this build.");
+            } catch (err) {
+              console.error("Insert table failed:", err);
+              alert("Table feature not available.");
+            }
+          };
+
+          const setHeading = (value) => {
             if (!editor) return;
             if (value === "p") {
-              // set paragraph node
               try {
                 editor.chain().focus().setParagraph().run();
               } catch {
-                // fallback to toggleHeading(0) if setParagraph absent
                 try {
                   editor.chain().focus().toggleHeading({ level: 0 }).run();
                 } catch {}
               }
-            } else {
-              const lvl = Number(value);
-              if (Number.isFinite(lvl) && lvl >= 1 && lvl <= 6) {
-                try {
-                  editor.chain().focus().toggleHeading({ level: lvl }).run();
-                } catch (e) {
-                  console.error("toggleHeading failed", e);
-                }
-              }
+              return;
             }
-          };
-
-          // guarded table insert (only if command exists)
-          const handleInsertTable = () => {
-            try {
-              if (!editor) throw new Error("editor not ready");
-              // prefer editor.commands.insertTable if available
-              const cmd =
-                editor.commands.insertTable ??
-                editor.commands.createTable ??
-                null;
-              if (typeof cmd === "function") {
-                // many versions expose insertTable via chain()
-                editor
-                  .chain()
-                  .focus()
-                  .insertTable?.({ rows: 2, cols: 2, withHeaderRow: true })
-                  ?.run();
-              } else {
-                alert("Table feature not available in this build.");
+            const lvl = Number(value);
+            if (Number.isFinite(lvl)) {
+              try {
+                editor.chain().focus().toggleHeading({ level: lvl }).run();
+              } catch (e) {
+                console.error(e);
               }
-            } catch (err) {
-              console.error("Insert table failed:", err);
-              alert("Table feature not available.");
             }
           };
 
@@ -298,7 +303,7 @@ export default function TiptapEditorClient(props) {
                 >{`</>`}</button>
 
                 <select
-                  onChange={(e) => handleHeadingChange(e.target.value)}
+                  onChange={(e) => setHeading(e.target.value)}
                   defaultValue="p"
                   className="border px-2 py-1 rounded"
                 >
@@ -355,12 +360,11 @@ export default function TiptapEditorClient(props) {
                 )}
               </div>
 
-              {/* right-side image inspector panel */}
               {selectedImage && (
                 <div
                   style={{
                     position: "absolute",
-                    right: -320, // place it to the right of the editor; tweak if needed
+                    right: -320,
                     top: 0,
                     width: 300,
                     zIndex: 60,
