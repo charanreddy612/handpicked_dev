@@ -110,6 +110,7 @@ export async function getAllCategories() {
   try {
     const resp = await http.get(`/merchant-categories?limit=1000`);
     const data = resp.data;
+    console.log("getAllCategories returned data :", data);
 
     const raw =
       (data && data.items) ||
