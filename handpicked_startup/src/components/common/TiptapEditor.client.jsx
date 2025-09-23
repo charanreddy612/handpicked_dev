@@ -1,5 +1,6 @@
 // src/components/common/TiptapEditor.client.jsx
 import React, { useEffect, useState, useRef } from "react";
+import "tippy.js/dist/tippy.css";
 
 /**
  * Client-only TipTap loader.

@@ -109,12 +109,8 @@ export async function removeMerchantCategory(id) {
 export async function getAllCategories() {
   try {
     const res = await http.get(`/merchant-categories?limit=1000`);
-    console.log("Categories fetched :::: ", res.data);
-    if (!res.ok) throw new Error("Failed to fetch categories");
-    const data = await res.json();
+    const data = res.data;
 
-    // normalize possible response shapes:
-    // { items: [...] } | { data: { rows: [...] } } | [...]
     const raw =
       (data && data.items) ||
       (data && data.data && (data.data.rows || data.data.items)) ||
@@ -125,7 +121,7 @@ export async function getAllCategories() {
     const arr = Array.isArray(raw) ? raw : [];
 
     return arr.map((cat) => ({
-      id: cat.id ?? cat._id ?? cat.id_string ?? null,
+      id: cat.id ?? cat._id ?? null,
       name: cat.name ?? cat.category_name ?? String(cat.id ?? cat._id ?? ""),
     }));
   } catch (err) {

@@ -289,9 +289,17 @@ textarea { resize:vertical; }
   cursor: nwse-resize;
 }
 
-/* optional wrapper tweaks so handlers overlay correctly */
-.ProseMirror img {
+.tiptap-root .ProseMirror {
+  min-height: 200px;
+  outline: none;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+.tiptap-root .ProseMirror:focus {
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+.tiptap-root img {
   max-width: 100%;
   height: auto;
-  display: block;
+  display:block;
 }
