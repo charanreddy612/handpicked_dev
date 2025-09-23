@@ -108,8 +108,8 @@ export async function removeMerchantCategory(id) {
 // src/services/merchantCategoryService.js
 export async function getAllCategories() {
   try {
-    const res = await http.get(`/merchant-categories?limit=1000`);
-    const data = res.data;
+    const resp = await http.get(`/merchant-categories?limit=1000`);
+    const data = resp.data;
 
     const raw =
       (data && data.items) ||
