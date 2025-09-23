@@ -108,30 +108,25 @@ export default function TiptapEditorClient(props) {
           ].filter(Boolean);
 
           // Deduplicate by extension name (if available) to avoid duplicate-extension warnings
-          const seen = new Set();
-          const extensions = rawExts.filter((ext) => {
-            try {
-              const name =
-                ext.name ||
-                (ext.constructor && ext.constructor.name) ||
-                String(ext);
-              if (seen.has(name)) return false;
-              seen.add(name);
-              return true;
-            } catch {
-              return true;
-            }
-          });
+          // --- replace previous dedupe with this robust dedupe ---
+          const extMap = new Map();
+          for (const ext of rawExts) {
+            if (!ext) continue;
+            // try to derive a stable name
+            const name =
+              ext.name ||
+              (ext.constructor && ext.constructor.name) ||
+              (ext.content && ext.content.name) || // fallback check
+              String(ext);
 
-          const editor = useEditor({
-            extensions,
-            content: vHtml || "<p></p>",
-            onUpdate: ({ editor }) => {
-              const html = editor.getHTML();
-              const json = editor.getJSON();
-              onUpd?.(html, json);
-            },
-          });
+            if (!extMap.has(name)) {
+              extMap.set(name, ext);
+            } else {
+              // duplicate — skip
+              console.debug("Skipping duplicate extension:", name);
+            }
+          }
+          const extensions = Array.from(extMap.values());
 
           // sync external valueHtml changes
           useEffect(() => {
