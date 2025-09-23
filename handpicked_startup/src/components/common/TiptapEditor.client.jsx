@@ -1,6 +1,13 @@
 // src/components/common/TiptapEditor.client.jsx
 import React, { useEffect, useState, useRef } from "react";
 
+/**
+ * Client-only TipTap loader.
+ * Dynamically imports TipTap and extensions at runtime (no top-level @tiptap imports).
+ *
+ * Props:
+ * - valueHtml, onUpdate(html,json), uploadImage(file) -> url, className
+ */
 export default function TiptapEditorClient(props) {
   const { valueHtml = "", onUpdate, uploadImage, className = "" } = props;
   const [EditorInner, setEditorInner] = useState(null);
@@ -10,53 +17,46 @@ export default function TiptapEditorClient(props) {
 
     (async () => {
       try {
-        // dynamic imports (only run in browser)
-        const [
-          tiptapReact,
-          StarterKit,
-          Underline,
-          Link,
-          ImageExt,
-          Table,
-          TableRow,
-          TableCell,
-          TableHeader,
-          TextAlign,
-          Placeholder,
-          BubbleMenuModule,
-        ] = await Promise.all([
-          import("@tiptap/react"),
-          import("@tiptap/starter-kit"),
-          import("@tiptap/extension-underline"),
-          import("@tiptap/extension-link"),
-          import("@tiptap/extension-image"),
-          import("@tiptap/extension-table"),
-          import("@tiptap/extension-table-row"),
-          import("@tiptap/extension-table-cell"),
-          import("@tiptap/extension-table-header"),
-          import("@tiptap/extension-text-align"),
-          import("@tiptap/extension-placeholder"),
-          import("@tiptap/react")
-            .then((m) => m.BubbleMenu)
-            .catch(() => null),
-        ]);
+        // dynamic imports (await each so we can grab .default reliably)
+        const tiptapReactModule = await import("@tiptap/react");
+        const StarterKitModule = await import("@tiptap/starter-kit");
+        const UnderlineModule = await import("@tiptap/extension-underline");
+        const LinkModule = await import("@tiptap/extension-link");
+        const ImageModule = await import("@tiptap/extension-image");
+        const TableModule = await import("@tiptap/extension-table");
+        const TableRowModule = await import("@tiptap/extension-table-row");
+        const TableCellModule = await import("@tiptap/extension-table-cell");
+        const TableHeaderModule = await import(
+          "@tiptap/extension-table-header"
+        );
+        const TextAlignModule = await import("@tiptap/extension-text-align");
+        const PlaceholderModule = await import("@tiptap/extension-placeholder");
 
         if (!mounted) return;
 
-        const { EditorContent, useEditor, BubbleMenu } = tiptapReact;
-        const Starter = StarterKit.default ?? StarterKit;
-        const UnderlineExt = Underline.default ?? Underline;
-        const LinkExt = Link.default ?? Link;
-        const ImageExtDef = ImageExt.default ?? ImageExt;
-        const TableExt = Table.default ?? Table;
-        const TableRowExt = TableRow.default ?? TableRow;
-        const TableCellExt = TableCell.default ?? TableCell;
-        const TableHeaderExt = TableHeader.default ?? TableHeader;
-        const TextAlignExt = TextAlign.default ?? TextAlign;
-        const PlaceholderExt = Placeholder.default ?? Placeholder;
-        const BubbleMenuComp = BubbleMenu || null;
+        // Extract actual exports (.default for ESM CJS interop)
+        const EditorContent =
+          tiptapReactModule.EditorContent ??
+          tiptapReactModule.default?.EditorContent;
+        const useEditor =
+          tiptapReactModule.useEditor ?? tiptapReactModule.default?.useEditor;
+        const BubbleMenuComp =
+          tiptapReactModule.BubbleMenu ??
+          tiptapReactModule.default?.BubbleMenu ??
+          null;
 
-        // Inner component that actually uses TipTap hooks (safe since imports done)
+        const Starter = StarterKitModule.default ?? StarterKitModule;
+        const UnderlineExt = UnderlineModule.default ?? UnderlineModule;
+        const LinkExt = LinkModule.default ?? LinkModule;
+        const ImageExtDef = ImageModule.default ?? ImageModule;
+        const TableExt = TableModule.default ?? TableModule;
+        const TableRowExt = TableRowModule.default ?? TableRowModule;
+        const TableCellExt = TableCellModule.default ?? TableCellModule;
+        const TableHeaderExt = TableHeaderModule.default ?? TableHeaderModule;
+        const TextAlignExt = TextAlignModule.default ?? TextAlignModule;
+        const PlaceholderExt = PlaceholderModule.default ?? PlaceholderModule;
+
+        // Inner component that actually uses TipTap hooks (safe since imports are done)
         function EditorInnerCmp(innerProps) {
           const {
             valueHtml: vHtml,
@@ -66,27 +66,44 @@ export default function TiptapEditorClient(props) {
           } = innerProps;
           const editor = useEditor({
             extensions: [
-              Starter.configure({ history: true }),
+              Starter.configure
+                ? Starter.configure({ history: true })
+                : Starter,
               UnderlineExt,
-              LinkExt.configure({ openOnClick: true }),
-              ImageExtDef.extend({
-                addAttributes() {
-                  return {
-                    src: {},
-                    alt: { default: null },
-                    title: { default: null },
-                    width: { default: null },
-                    height: { default: null },
-                  };
-                },
-              }),
-              TableExt.configure({ resizable: true }),
+              LinkExt &&
+                (LinkExt.configure
+                  ? LinkExt.configure({ openOnClick: true })
+                  : LinkExt),
+              ImageExtDef &&
+                (ImageExtDef.extend
+                  ? ImageExtDef.extend({
+                      addAttributes() {
+                        return {
+                          src: {},
+                          alt: { default: null },
+                          title: { default: null },
+                          width: { default: null },
+                          height: { default: null },
+                        };
+                      },
+                    })
+                  : ImageExtDef),
+              TableExt &&
+                (TableExt.configure
+                  ? TableExt.configure({ resizable: true })
+                  : TableExt),
               TableRowExt,
               TableHeaderExt,
               TableCellExt,
-              TextAlignExt.configure({ types: ["heading", "paragraph"] }),
-              PlaceholderExt.configure({ placeholder: "Write here..." }),
-            ],
+              TextAlignExt &&
+                (TextAlignExt.configure
+                  ? TextAlignExt.configure({ types: ["heading", "paragraph"] })
+                  : TextAlignExt),
+              PlaceholderExt &&
+                (PlaceholderExt.configure
+                  ? PlaceholderExt.configure({ placeholder: "Write here..." })
+                  : PlaceholderExt),
+            ].filter(Boolean),
             content: vHtml || "<p></p>",
             onUpdate: ({ editor }) => {
               const html = editor.getHTML();
@@ -95,10 +112,9 @@ export default function TiptapEditorClient(props) {
             },
           });
 
-          // image upload handler via hidden input (same logic you used)
+          // image upload handler via hidden input
           const fileRef = useRef(null);
           useEffect(() => {
-            // sync external changes to content
             if (!editor) return;
             if (vHtml && editor.getHTML() !== vHtml) {
               editor.commands.setContent(vHtml, false);
@@ -302,9 +318,7 @@ export default function TiptapEditorClient(props) {
     };
   }, []);
 
-  if (!EditorInner) {
-    return <div>Loading editor…</div>;
-  }
+  if (!EditorInner) return <div>Loading editor…</div>;
 
   return (
     <EditorInner
