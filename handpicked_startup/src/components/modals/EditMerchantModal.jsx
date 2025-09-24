@@ -649,10 +649,10 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
             <label className="block mb-1">Description</label>
             <div
               className="
-                    h-80 border rounded bg-white
-                    [&_.ql-container]:h-full
-                    [&_.ql-editor]:h-full
-                    [&_.ql-editor]:overflow-y-auto"
+                min-h-[400px] border rounded bg-white
+                [&_.ql-container]:min-h-[400px]
+                [&_.ql-editor]:min-h-[400px]
+                [&_.ql-editor]:overflow-y-auto"
             >
               <SafeQuill
                 ref={quillRef}
