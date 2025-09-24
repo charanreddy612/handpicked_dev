@@ -9,29 +9,39 @@ const SafeQuill = forwardRef((props, ref) => {
 
     (async () => {
       try {
-        // load Quill core + table plugin + styles (client only)
+        // 1) load Quill (runtime-only). @vite-ignore prevents Vite static resolution.
         const QuillModule = await import(/* @vite-ignore */ "quill");
         const Quill = QuillModule.default || QuillModule;
 
-        // register quill-better-table (if installed)
+        // 2) ensure a single global Quill instance so registration affects react-quill-new
+        if (typeof window !== "undefined") {
+          if (!window.Quill) window.Quill = Quill;
+          else if (window.Quill !== Quill) window.Quill = Quill;
+        }
+
+        // 3) try register quill-better-table on that Quill instance
         try {
           const QBetter = await import(/* @vite-ignore */ "quill-better-table");
           const QBetterDefault = QBetter.default || QBetter;
-          await import(/* @vite-ignore */ "quill-better-table/dist/quill-better-table.css");
-          // register under modules/better-table
+          // register under module id Quill expects; allow override
           Quill.register({ "modules/better-table": QBetterDefault }, true);
+          Quill.register({ "better-table": QBetterDefault }, true);
+          await import(
+            /* @vite-ignore */ "quill-better-table/dist/quill-better-table.css"
+          );
         } catch (tblErr) {
-          // plugin not installed or failed — log but continue
-          console.warn("quill-better-table not available:", tblErr);
+          // plugin missing or failed — continue gracefully
+          console.warn(
+            "quill-better-table not available or failed to register:",
+            tblErr
+          );
         }
 
-        // now load the react-quill wrapper and theme css
+        // 4) finally import react-quill-new (after registration)
         const mod = await import(/* @vite-ignore */ "react-quill-new");
         await import(/* @vite-ignore */ "react-quill-new/dist/quill.snow.css");
 
-        if (mounted) {
-          setEditor(() => mod.default);
-        }
+        if (mounted) setEditor(() => mod.default);
       } catch (err) {
         console.error("Failed to load Quill editor:", err);
       }
@@ -41,7 +51,6 @@ const SafeQuill = forwardRef((props, ref) => {
       mounted = false;
     };
   }, []);
-
   if (!Editor) {
     return <div>Loading editor...</div>; // SSR-safe placeholder
   }

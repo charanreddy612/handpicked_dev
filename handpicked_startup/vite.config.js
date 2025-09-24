@@ -27,6 +27,6 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ["react-quill-new", "quill", "quill-better-table"], // ✅ critical: prevents SSR import
+    noExternal: ["react-quill-new"], // ✅ critical: prevents SSR import
   },
 });
