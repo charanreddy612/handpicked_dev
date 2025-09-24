@@ -276,3 +276,14 @@ textarea { resize:vertical; }
 .title{font-weight:600;}
 .body{padding:12px;}
 .btn{border:1px solid #dfe3e8;border-radius:4px;padding:6px 10px;background:#fff;cursor:pointer;font-size:13px;}
+/* make quill headings visible and sized */
+.ql-editor h1 {
+  font-size: 1.5rem; /* adjust as needed */
+  font-weight: 700;
+  margin: 0.67em 0;
+}
+.ql-editor h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.75em 0;
+}
