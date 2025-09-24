@@ -383,6 +383,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
     "list", // ← only "list" here; toolbar still shows ordered/bullet
     "link",
     "image",
+    "table",
   ];
 
   const modules = {
@@ -393,16 +394,38 @@ export default function AddMerchantModal({ onClose, onSave }) {
         [{ list: "ordered" }, { list: "bullet" }],
         ["link", "image"],
         ["clean"],
+        ["table"], // toolbar button handled below
       ],
-      handlers: { image: imageHandler },
+      handlers: {
+        image: imageHandler,
+        table: function () {
+          const rows = parseInt(prompt("Rows", "3"), 10) || 3;
+          const cols = parseInt(prompt("Columns", "3"), 10) || 3;
+          try {
+            const editor = quillRef.current?.getEditor?.();
+            const tableModule = editor?.getModule?.("better-table");
+            if (tableModule && typeof tableModule.insertTable === "function") {
+              tableModule.insertTable(rows, cols);
+            } else {
+              alert("Table module not available.");
+            }
+          } catch (err) {
+            console.error("Insert table failed:", err);
+            alert("Could not insert table.");
+          }
+        },
+      },
     },
+
     history: {
       delay: 500,
       maxStack: 200,
       userOnly: true,
     },
+
     keyboard: {
       bindings: {
+        // keep your undo/redo bindings; do NOT reference QuillBetterTable here
         undo: {
           key: "z",
           shortKey: true,
@@ -426,6 +449,22 @@ export default function AddMerchantModal({ onClose, onSave }) {
           },
         },
       },
+    },
+
+    // enable better-table module (SafeQuill registers the plugin with Quill)
+    "better-table": {
+      operationMenu: {
+        items: {
+          insertRowAbove: true,
+          insertRowBelow: true,
+          insertColumnLeft: true,
+          insertColumnRight: true,
+          deleteRow: true,
+          deleteColumn: true,
+          deleteTable: true,
+        },
+      },
+      // you can add more options later if needed
     },
   };
 
