@@ -10,14 +10,10 @@ export default defineConfig({
   ],
   optimizeDeps: {
     include: ["react-router-dom", "react-quill-new"], // ✅ update package name
-    exclude: ["quill-better-table"],
   },
   build: {
     commonjsOptions: {
       include: [/react-router-dom/, /node_modules/],
-    },
-    rollupOptions: {
-      external: ["quill", "quill-better-table"],
     },
   },
   resolve: {
@@ -27,6 +23,6 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ["react-quill-new"], // ✅ critical: prevents SSR import
+    noExternal: ["react-quill-new", "quill"], // ✅ critical: prevents SSR import
   },
 });
