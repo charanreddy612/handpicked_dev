@@ -19,27 +19,36 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-  "https://admin.savingharbor.com",      // admin prod
-  "https://admin.savingharbor.vercel.app", // if you still test on default vercel URL
-  "https://dev-admin.savingharbor.com"   // if you added a dev admin domain
+  "https://admin.savingharbor.com",
+  "https://admin.savingharbor.vercel.app",
+  "https://dev-admin.savingharbor.com"
 ];
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(null, false);
-    },
-    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  })
-);
-app.options("/api/auth/login", cors());
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests
+    return allowedOrigins.includes(origin)
+      ? callback(null, true)
+      : callback(null, false);
+  },
+  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // apply to all preflight requests
+
+// safety fallback for routes that somehow bypass CORS middleware
+app.use((req, res, next) => {
+  const origin = req.get("Origin");
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  next();
+});
 
 app.use(express.json({ limit: process.env.JSON_LIMIT || "1mb" }));
 app.use(express.urlencoded({ extended: true }));
