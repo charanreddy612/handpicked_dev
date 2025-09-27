@@ -38,7 +38,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // apply to all preflight requests
+app.options("/api/auth/login", cors());
 
 // safety fallback for routes that somehow bypass CORS middleware
 app.use((req, res, next) => {
