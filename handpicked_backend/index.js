@@ -18,7 +18,11 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 dotenv.config();
 const app = express();
 
-const allowedOrigins = ["https://handpickedstartup.vercel.app"];
+const allowedOrigins = [
+  "https://admin.savingharbor.com",      // admin prod
+  "https://admin.savingharbor.vercel.app", // if you still test on default vercel URL
+  "https://dev-admin.savingharbor.com"   // if you added a dev admin domain
+];
 app.use(
   cors({
     origin: function (origin, callback) {
