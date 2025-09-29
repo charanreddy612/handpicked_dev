@@ -665,7 +665,7 @@ textarea {
   box-sizing: border-box;
   border-radius: 0.5rem;
   background: #fff;
-  margin-bottom: 1rem;   /* prevents overlap with next field */
+  margin-bottom: 3rem;   /* prevents overlap with next field */
 }
 
 .safe-quill .ql-toolbar {
