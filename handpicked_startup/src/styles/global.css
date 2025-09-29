@@ -660,10 +660,19 @@ textarea {
 .safe-quill {
   display: flex;
   flex-direction: column;
-  height: 36rem; /* desktop */
-  max-height: 36rem;
+  width: 100%;
+  max-height: 36rem;    /* keeps it from growing past this */
+  height: auto;         /* allow shrink */
   border-radius: 0.5rem;
   background: #fff;
+  margin-bottom: 1rem;
+}
+
+.safe-quill .ql-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .safe-quill .ql-toolbar {
