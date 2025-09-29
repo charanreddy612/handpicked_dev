@@ -647,7 +647,7 @@ export default function EditMerchantModal({ merchantId, onClose, onSave }) {
           </div>
           <div>
             <label className="block mb-1">Description</label>
-            <div className="admin-quill-container border rounded bg-white">
+            <div className="border rounded bg-white">
               <SafeQuill
                 ref={quillRef}
                 theme="snow"

@@ -9,13 +9,10 @@ const SafeQuill = forwardRef((props, ref) => {
 
     (async () => {
       try {
-        // dynamically import only on client
         const mod = await import("react-quill-new");
         await import("react-quill-new/dist/quill.snow.css");
 
-        if (mounted) {
-          setEditor(() => mod.default);
-        }
+        if (mounted) setEditor(() => mod.default);
       } catch (err) {
         console.error("Failed to load Quill editor:", err);
       }
@@ -26,11 +23,15 @@ const SafeQuill = forwardRef((props, ref) => {
     };
   }, []);
 
-  if (!Editor) {
-    return <div>Loading editor...</div>; // SSR-safe placeholder
-  }
+  if (!Editor) return <div>Loading editor...</div>;
 
-  return <Editor ref={ref} {...props} />;
+  return (
+    <div className="safe-quill flex flex-col h-[300px]">
+      {" "}
+      {/* adjustable height */}
+      <Editor ref={ref} {...props} />
+    </div>
+  );
 });
 
 export default SafeQuill;
