@@ -379,3 +379,11 @@ textarea { resize:vertical; }
   background-color: #f9fafb; /* gray-50 */
   font-weight: 600;
 }
+
+.admin-quill-container { height: 36rem; overflow: hidden; }
+.admin-quill-container .ql-container,
+.admin-quill-container .ql-editor { height: 100%; }
+.admin-quill-container .ql-editor { overflow-y: auto; padding: 0.75rem 1rem; }
+@media (max-width: 768px) {
+  .admin-quill-container { height: 28rem; }
+}

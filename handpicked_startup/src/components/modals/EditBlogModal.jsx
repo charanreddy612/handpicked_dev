@@ -321,12 +321,7 @@ export default function EditBlogModal({ blogId, onClose, onSave }) {
           {/* Content */}
           <div>
             <label>Content</label>
-            <div
-              className="h-80 border rounded bg-white
-                        [&_.ql-container]:h-full
-                        [&_.ql-editor]:h-full
-                        [&_.ql-editor]:overflow-y-auto"
-            >
+            <div className="admin-quill-container border rounded bg-white">
               <SafeQuill
                 ref={quillRef}
                 theme="snow"

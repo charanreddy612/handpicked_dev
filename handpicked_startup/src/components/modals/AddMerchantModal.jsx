@@ -669,13 +669,7 @@ export default function AddMerchantModal({ onClose, onSave }) {
           </div>
           <div>
             <label className="block mb-1">Description</label>
-            <div
-              className="
-                min-h-[400px] border rounded bg-white
-                [&_.ql-container]:min-h-[400px]
-                [&_.ql-editor]:min-h-[400px]
-                [&_.ql-editor]:overflow-y-auto"
-            >
+            <div className="admin-quill-container border rounded bg-white">
               <SafeQuill
                 ref={quillRef}
                 theme="snow"
