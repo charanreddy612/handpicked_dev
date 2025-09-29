@@ -656,23 +656,16 @@ textarea {
   font-weight: 600;
 }
 
-/* Quill editor layout handled inside SafeQuill */
 .safe-quill {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-height: 36rem;    /* keeps it from growing past this */
-  height: auto;         /* allow shrink */
+  height: 28rem;         /* fixed height */
+  max-height: 28rem;
+  box-sizing: border-box;
   border-radius: 0.5rem;
   background: #fff;
-  margin-bottom: 1rem;
-}
-
-.safe-quill .ql-container {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
+  margin-bottom: 1rem;   /* prevents overlap with next field */
 }
 
 .safe-quill .ql-toolbar {
@@ -683,18 +676,17 @@ textarea {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  border-radius: 0 0 0.5rem 0.5rem;
 }
 
 .safe-quill .ql-editor {
   padding: 1rem;
-  padding-bottom: 3rem; /* safe bottom space */
+  padding-bottom: 3rem;
   -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 768px) {
   .safe-quill {
-    height: 28rem;
-    max-height: 28rem;
+    height: 22rem;
+    max-height: 22rem;
   }
 }
