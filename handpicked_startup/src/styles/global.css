@@ -384,7 +384,7 @@ textarea { resize:vertical; }
 .admin-quill-container {
   display: flex;
   flex-direction: column;
-  height: 36rem;      /* desktop */
+  height: 36rem;       /* desktop */
   max-height: 36rem;
   overflow: hidden;
   background: #fff;
@@ -395,21 +395,24 @@ textarea { resize:vertical; }
 /* critical: allow children to flex/scroll properly */
 .admin-quill-container .ql-container,
 .admin-quill-container .ql-editor {
-  flex: 1 1 auto;   /* let them grow/shrink */
-  min-height: 0;    /* <-- important for inner scroll to work in flex parents */
+  flex: 1 1 auto;     /* let them grow/shrink */
+  min-height: 0;      /* needed for inner scroll to work in flex parents */
   height: 100%;
   box-sizing: border-box;
 }
 
-/* scrolling and safe-bottom padding so final lines aren't hidden */
+/* scrolling + safe bottom padding so last lines aren't clipped */
 .admin-quill-container .ql-editor {
   overflow-y: auto;
-  padding: 1rem;           /* top/right/left/bottom padding */
-  padding-bottom: 2.25rem; /* extra bottom space so last lines are reachable above scrollbar */
+  padding: 1rem;
+  padding-bottom: 3rem;  /* extra space so final lines are visible above scrollbar */
   -webkit-overflow-scrolling: touch;
 }
 
 /* responsive */
 @media (max-width: 768px) {
-  .admin-quill-container { height: 28rem; max-height: 28rem; }
+  .admin-quill-container {
+    height: 28rem;
+    max-height: 28rem;
+  }
 }
