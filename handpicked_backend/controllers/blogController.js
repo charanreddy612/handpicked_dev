@@ -15,6 +15,13 @@ const toError = (err, msg = "Server error") => ({
 });
 const toBool = (v) => v === true || v === "true" || v === 1 || v === "1";
 
+const toNumOrNull = (v) => {
+  if (v === undefined || v === null) return null;
+  if (v === "" || v === "null") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
 export async function listBlogs(req, res) {
   try {
     const title = req.query?.title || null;
@@ -117,6 +124,7 @@ export async function createBlog(req, res) {
 export async function updateBlog(req, res) {
   try {
     const { id } = req.params;
+    if (!id || isNaN(Number(id))) return res.status(400).json(toError("Invalid id","Invalid blog id"));
     const body = req.body || {};
 
     const patch = {
@@ -191,6 +199,7 @@ export async function updateBlog(req, res) {
     }
 
     const updated = await blogRepo.update(id, patch);
+    if (!updated) return res.status(404).json(toError({}, "Blog not found"));
     return res.json({ data: updated, error: null });
   } catch (err) {
     console.error("Update Blog Error:", err);
