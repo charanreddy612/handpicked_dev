@@ -98,8 +98,8 @@ export async function createBlog(req, res) {
     const created = await blogRepo.insert({
       title: body.title,
       slug,
-      category_id: body.category_id || null,
-      author_id: body.author_id || null,
+      category_id: toNumOrNull(body.category_id),
+      author_id: toNumOrNull(body.author_id),
       content: body.content || "",
       meta_title: body.meta_title || "",
       meta_keywords: body.meta_keywords || "",
