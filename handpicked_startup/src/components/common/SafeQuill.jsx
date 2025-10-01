@@ -2,9 +2,7 @@
 import React, { useEffect, useState, forwardRef } from "react";
 import { uploadBlogImage } from "../../services/blogService";
 
-/**
- * Convert dataURL -> File
- */
+/** Convert dataURL -> File */
 function dataURLtoFile(dataurl, filename) {
   const arr = dataurl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -16,13 +14,16 @@ function dataURLtoFile(dataurl, filename) {
   return new File([u8arr], filename, { type: mime });
 }
 
+/** Minimal empty-delta fallback for clipboard matcher */
+const EMPTY_DELTA = { ops: [] };
+
 const SafeQuill = forwardRef((props, ref) => {
   const [Editor, setEditor] = useState(null);
 
-  // Lazy-load the Quill editor (client-side)
+  // Lazy-load the Quill editor only on client
   useEffect(() => {
     let mounted = true;
-    if (typeof window === "undefined") return; // guard SSR/build
+    if (typeof window === "undefined") return;
     (async () => {
       try {
         const mod = await import("react-quill-new");
@@ -37,7 +38,7 @@ const SafeQuill = forwardRef((props, ref) => {
     };
   }, []);
 
-  // Attach handlers only in browser and when Editor and ref are ready
+  // Attach clipboard / paste handlers once editor instance available
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!Editor || !ref) return;
@@ -46,7 +47,7 @@ const SafeQuill = forwardRef((props, ref) => {
     let removePasteListener = () => {};
 
     (async () => {
-      // wait for forwarded ref to become available
+      // Wait briefly for forwarded ref to hold underlying editor
       let editor = null;
       for (let i = 0; i < 20; i++) {
         editor = ref.current?.getEditor?.();
@@ -57,32 +58,27 @@ const SafeQuill = forwardRef((props, ref) => {
       }
       if (!editor || cancelled) return;
 
-      // Try to import Delta client-side only; if it fails, fallback to plain empty ops
-      let DeltaClass = null;
-      try {
-        // dynamic import only runs in browser; bundler won't error because inside effect with window guard
-        // but still wrap in try/catch to be safe
-        // eslint-disable-next-line global-require
-        const Quill = (await import("quill")).default;
-        DeltaClass = Quill.import ? Quill.import("delta") : null;
-      } catch (e) {
-        // fallback to null; we'll use simple empty-delta object instead
-        DeltaClass = null;
-      }
-
-      // Clipboard matcher to catch <img src="data:...">
+      // Clipboard matcher: intercept <img src="data:..."> nodes (base64)
       const clipboardHandler = (node, delta) => {
         try {
           const src = (node && node.getAttribute && node.getAttribute("src")) || "";
           if (typeof src === "string" && src.startsWith("data:image/")) {
             const sel = editor.getSelection(true);
             const insertIndex = (sel && sel.index) || editor.getLength();
+
+            // upload async and insert returned URL
             (async () => {
               try {
                 const file = dataURLtoFile(src, `pasted-${Date.now()}.png`);
                 const res = await uploadBlogImage(file);
                 const url = res?.url || res;
                 if (url) {
+                  // remove any selection char at insertIndex then insert image
+                  try {
+                    editor.deleteText(insertIndex, 1);
+                  } catch (e) {
+                    // ignore if nothing to delete
+                  }
                   editor.insertEmbed(insertIndex, "image", url);
                   editor.setSelection(insertIndex + 1);
                 }
@@ -90,8 +86,9 @@ const SafeQuill = forwardRef((props, ref) => {
                 console.error("Failed to upload pasted image:", err);
               }
             })();
-            if (DeltaClass) return new DeltaClass();
-            return { ops: [] };
+
+            // prevent base64 from being inserted
+            return EMPTY_DELTA;
           }
         } catch (err) {
           console.error("clipboardHandler error:", err);
@@ -105,11 +102,12 @@ const SafeQuill = forwardRef((props, ref) => {
         console.warn("Failed to add clipboard matcher:", e);
       }
 
-      // Handle paste of image files (clipboard file items)
+      // Paste event listener: handles image files from clipboard (file-kind items)
       const onPaste = (e) => {
         try {
           const items = e.clipboardData?.items;
           if (!items) return;
+
           const imageFiles = [];
           for (let i = 0; i < items.length; i++) {
             const it = items[i];
@@ -119,9 +117,12 @@ const SafeQuill = forwardRef((props, ref) => {
             }
           }
           if (!imageFiles.length) return;
+
+          // prevent default insertion; upload + insert ourselves
           e.preventDefault();
           const sel = editor.getSelection(true);
           let idx = (sel && sel.index) || editor.getLength();
+
           (async () => {
             for (const file of imageFiles) {
               try {
@@ -147,12 +148,12 @@ const SafeQuill = forwardRef((props, ref) => {
         removePasteListener = () => {
           try {
             editor.root.removeEventListener("paste", onPaste);
-          } catch (e) {
-            /* ignore */
+          } catch (err) {
+            /* ignore cleanup errors */
           }
         };
-      } catch (e) {
-        console.warn("Failed to attach paste listener:", e);
+      } catch (err) {
+        console.warn("Failed to attach paste listener:", err);
       }
     })();
 
@@ -160,7 +161,7 @@ const SafeQuill = forwardRef((props, ref) => {
       cancelled = true;
       try {
         removePasteListener();
-      } catch (e) {
+      } catch (err) {
         /* ignore */
       }
     };
