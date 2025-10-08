@@ -1,10 +1,14 @@
 // src/controllers/couponsController.js
 import { uploadImageBuffer } from "../services/storageService.js";
 import * as CouponsRepo from "../dbhelper/CouponsRepo.js";
+import sharp from "sharp";
 
 const BUCKET = process.env.UPLOAD_BUCKET || "coupon-images";
 const FOLDER = "coupons";
 const PROOF_FOLDER = "proofs"; // folder inside your bucket
+
+const WEBP_QUALITY = 80; // adjust 60-90 as you like
+const MAX_WIDTH = 1600; // optional resize, null to skip
 
 const toBool = (v) => v === true || v === "true" || v === "1";
 const toInt = (v, d = 0) => {
@@ -305,11 +309,7 @@ export async function getMerchantProofs(req, res) {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Number(req.query.limit) || 10);
 
-    const data = await CouponsRepo.fetchMerchantProofs(
-      merchantId,
-      page,
-      limit
-    );
+    const data = await CouponsRepo.fetchMerchantProofs(merchantId, page, limit);
 
     return res.json({ data, error: null });
   } catch (err) {
@@ -318,41 +318,131 @@ export async function getMerchantProofs(req, res) {
 }
 
 // POST /api/coupons/validation/:merchantId/upload
+// export async function uploadMerchantProofs(req, res) {
+//   try {
+//     const merchantId = Number(req.params.merchantId);
+//     if (!merchantId)
+//       return res
+//         .status(400)
+//         .json({ data: null, error: { message: "Invalid merchant ID" } });
+
+//     const files = req.files || [];
+//     if (!files.length)
+//       return res
+//         .status(400)
+//         .json({ data: null, error: { message: "No files uploaded" } });
+
+//     const uploadedFiles = []; // will collect { url, filename } objects
+
+//     for (const file of files) {
+//       const { url, error } = await uploadImageBuffer(
+//         BUCKET,
+//         PROOF_FOLDER,
+//         file.buffer,
+//         file.originalname,
+//         file.mimetype
+//       );
+//       if (error)
+//         return res.status(500).json({
+//           data: null,
+//           error: { message: "Storage upload failed", details: error },
+//         });
+
+//       uploadedFiles.push({ url, filename: file.originalname });
+//     }
+
+//     // Use the repo's bulk insert (uploadProofs)
+//     const inserted = await CouponsRepo.uploadProofs(merchantId, uploadedFiles);
+
+//     return res.status(201).json({ data: inserted, error: null });
+//   } catch (err) {
+//     console.error("uploadMerchantProofs error:", err);
+//     return res.status(500).json({
+//       data: null,
+//       error: {
+//         message: "Error uploading proofs",
+//         details: err?.message || err,
+//       },
+//     });
+//   }
+// }
+
+// Requires: import sharp from "sharp"; at top of file
+// Also requires BUCKET and PROOF_FOLDER constants defined (or use process.env)
+
 export async function uploadMerchantProofs(req, res) {
   try {
     const merchantId = Number(req.params.merchantId);
-    if (!merchantId)
+    if (!merchantId) {
       return res
         .status(400)
         .json({ data: null, error: { message: "Invalid merchant ID" } });
+    }
 
     const files = req.files || [];
-    if (!files.length)
+    if (!files.length) {
       return res
         .status(400)
         .json({ data: null, error: { message: "No files uploaded" } });
-
-    const uploadedFiles = []; // will collect { url, filename } objects
-
-    for (const file of files) {
-      const { url, error } = await uploadImageBuffer(
-        BUCKET,
-        PROOF_FOLDER,
-        file.buffer,
-        file.originalname,
-        file.mimetype
-      );
-      if (error)
-        return res.status(500).json({
-          data: null,
-          error: { message: "Storage upload failed", details: error },
-        });
-
-      uploadedFiles.push({ url, filename: file.originalname });
     }
 
-    // Use the repo's bulk insert (uploadProofs)
-    const inserted = await CouponsRepo.uploadProofs(merchantId, uploadedFiles);
+    // Convert & upload each file, collecting { filename, url } for repo.bulk insert
+    const uploadedEntries = [];
+
+    for (const file of files) {
+      // --- Optional: convert to webp. Remove this block if you don't want conversion ---
+      let bufferToUpload = file.buffer;
+      try {
+        // convert/resize => webp
+        const MAX_WIDTH = 1600; // tweak or set to null to skip resize
+        const WEBP_QUALITY = 80;
+        let img = sharp(file.buffer);
+        if (MAX_WIDTH)
+          img = img.resize({ width: MAX_WIDTH, withoutEnlargement: true });
+        bufferToUpload = await img.webp({ quality: WEBP_QUALITY }).toBuffer();
+      } catch (convErr) {
+        console.error(
+          "Image conversion failed for",
+          file.originalname,
+          convErr
+        );
+        // fallback: use original buffer
+        bufferToUpload = file.buffer;
+      }
+      // -------------------------------------------------------------------------------
+
+      // prepare filename (use .webp if conversion succeeded)
+      const base = (file.originalname || "upload").replace(/\.[^/.]+$/, "");
+      const ext = ".webp";
+      const upName = `${base}${ext}`;
+
+      // upload to storage
+      const { url, error: uploadErr } = await uploadImageBuffer(
+        BUCKET || process.env.UPLOAD_BUCKET || "merchant-images",
+        PROOF_FOLDER || "merchant-proofs",
+        bufferToUpload,
+        upName,
+        "image/webp"
+      );
+
+      if (uploadErr) {
+        console.error("Storage upload failed:", uploadErr);
+        return res
+          .status(500)
+          .json({
+            data: null,
+            error: { message: "Storage upload failed", details: uploadErr },
+          });
+      }
+
+      uploadedEntries.push({ filename: upName, url });
+    }
+
+    // Use existing repo helper (bulk insert)
+    const inserted = await CouponsRepo.uploadProofs(
+      merchantId,
+      uploadedEntries
+    );
 
     return res.status(201).json({ data: inserted, error: null });
   } catch (err) {
