@@ -26,12 +26,11 @@ export default function AddProofModal({ merchant, onClose, onSave }) {
 
     setSaving(true);
     const fd = new FormData();
-    fd.append("merchant_id", merchant.id);
-    files.forEach((file) => fd.append("proof_images[]", file));
+    fd.append("files", files[0]);
 
     try {
-      const { error: apiError } = await uploadProofs(fd);
-      if (apiError) {
+      const { data, error } = await uploadProofs(fd);
+      if (error) {
         setError(apiError.message || "Failed to add proofs.");
       } else {
         onSave?.();

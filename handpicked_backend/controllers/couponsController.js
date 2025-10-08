@@ -339,7 +339,7 @@ export async function uploadMerchantProofs(req, res) {
 
     for (const file of files) {
       const { url, error } = await uploadImageBuffer(
-        process.env.UPLOAD_BUCKET,
+        BUCKET,
         PROOF_FOLDER,
         file.buffer,
         file.originalname,
