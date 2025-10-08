@@ -72,3 +72,36 @@ export async function toggleEditorPick(id) {
   const res = await http.patch(`/coupons/${id}/editor-pick`);
   return { data: res.data?.data ?? null, error: res.data?.error ?? null };
 }
+
+// === New functions for validation ===
+// Fetch proofs for a merchant
+export async function fetchMerchantProofs(merchantId) {
+  try {
+    const res = await http.get(`/coupons/validation/${merchantId}`);
+    return { data: Array.isArray(res.data?.data) ? res.data.data : [], error: null };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+}
+
+// Delete a proof by ID
+export async function deleteProof(proofId) {
+  try {
+    const res = await http.delete(`/coupons/validation/proof/${proofId}`);
+    return { data: res.data?.data ?? null, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+// Upload new proofs for a merchant
+export async function uploadProofs(merchantId, formData) {
+  try {
+    const res = await http.post(`/coupons/validation/${merchantId}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { data: res.data?.data ?? null, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}

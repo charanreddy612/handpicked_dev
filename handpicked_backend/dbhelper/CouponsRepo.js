@@ -172,3 +172,46 @@ export async function countTopCoupons() {
   if (error) throw error;
   return count ?? 0;
 }
+
+// === Merchant Proofs ===
+
+// Fetch proofs for a merchant
+export async function fetchMerchantProofs(merchantId) {
+  const { data, error } = await supabase
+    .from("merchant_proofs")
+    .select("*")
+    .eq("merchant_id", merchantId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Delete a proof by ID
+export async function deleteProof(proofId) {
+  const { error } = await supabase
+    .from("merchant_proofs")
+    .delete()
+    .eq("id", proofId);
+
+  if (error) throw error;
+  return true;
+}
+
+// Upload new proofs for a merchant
+export async function uploadProofs(merchantId, files) {
+  // files: array of { url, filename } or { buffer, originalname, mimetype }
+  const inserts = files.map((f) => ({
+    merchant_id: merchantId,
+    image_url: f.url,
+    filename: f.filename || f.originalname,
+  }));
+
+  const { data, error } = await supabase
+    .from("merchant_proofs")
+    .insert(inserts)
+    .select();
+
+  if (error) throw error;
+  return data;
+}

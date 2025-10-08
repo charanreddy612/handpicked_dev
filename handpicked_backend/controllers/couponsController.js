@@ -4,6 +4,7 @@ import * as CouponsRepo from "../dbhelper/CouponsRepo.js";
 
 const BUCKET = process.env.UPLOAD_BUCKET || "coupon-images";
 const FOLDER = "coupons";
+const PROOF_FOLDER = "proofs"; // folder inside your bucket
 
 const toBool = (v) => v === true || v === "true" || v === "1";
 const toInt = (v, d = 0) => {
@@ -313,5 +314,78 @@ export async function deleteCoupon(req, res) {
           details: err?.message || err,
         },
       });
+  }
+}
+
+// -----------------------------
+// Fetch all proofs for a merchant
+// GET /coupons/validation/:merchantId
+// -----------------------------
+export async function getMerchantProofs(req, res) {
+  try {
+    const merchantId = Number(req.params.merchantId);
+    if (!merchantId) return res.status(400).json({ data: [], error: { message: "Invalid merchant ID" } });
+
+    const proofs = await CouponsRepo.listProofs(merchantId); // you will create this DB helper
+    return res.json({ data: proofs, error: null });
+  } catch (err) {
+    return res.status(500).json({ data: [], error: { message: "Error fetching proofs", details: err?.message || err } });
+  }
+}
+
+// -----------------------------
+// Upload new proofs for a merchant
+// POST /coupons/validation/:merchantId/upload
+// -----------------------------
+export async function uploadMerchantProofs(req, res) {
+  try {
+    const merchantId = Number(req.params.merchantId);
+    if (!merchantId) return res.status(400).json({ data: null, error: { message: "Invalid merchant ID" } });
+
+    const files = req.files || [];
+    if (!files.length) return res.status(400).json({ data: null, error: { message: "No files uploaded" } });
+
+    const uploadedProofs = [];
+
+    for (const file of files) {
+      const { url, error } = await uploadImageBuffer(
+        process.env.UPLOAD_BUCKET,
+        PROOF_FOLDER,
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+      if (error) return res.status(500).json({ data: null, error: { message: "Upload failed", details: error } });
+
+      // Save proof record to DB
+      const proofRecord = await CouponsRepo.insertProof({
+        merchant_id: merchantId,
+        image_url: url
+      });
+
+      uploadedProofs.push(proofRecord);
+    }
+
+    return res.status(201).json({ data: uploadedProofs, error: null });
+  } catch (err) {
+    return res.status(500).json({ data: null, error: { message: "Error uploading proofs", details: err?.message || err } });
+  }
+}
+
+// -----------------------------
+// Delete a proof
+// DELETE /coupons/validation/proof/:proofId
+// -----------------------------
+export async function deleteProof(req, res) {
+  try {
+    const proofId = Number(req.params.proofId);
+    if (!proofId) return res.status(400).json({ data: null, error: { message: "Invalid proof ID" } });
+
+    const deleted = await CouponsRepo.removeProof(proofId); // implement in DB helper
+    if (!deleted) return res.status(500).json({ data: null, error: { message: "Failed to delete proof" } });
+
+    return res.json({ data: { id: proofId }, error: null });
+  } catch (err) {
+    return res.status(500).json({ data: null, error: { message: "Error deleting proof", details: err?.message || err } });
   }
 }

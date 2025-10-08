@@ -4,6 +4,10 @@ import * as couponsController from "../controllers/couponsController.js";
 
 const router = express.Router();
 
+// =====================
+// Coupon CRUD
+// =====================
+
 // List
 router.get("/", couponsController.listCoupons);
 
@@ -38,5 +42,22 @@ router.patch("/:id/editor-pick", couponsController.toggleEditorPick);
 
 // Delete
 router.delete("/:id", couponsController.deleteCoupon);
+
+// =====================
+// Validation / Proofs
+// =====================
+
+// Fetch proofs for a merchant
+router.get("/validation/:merchantId", couponsController.getMerchantProofs);
+
+// Upload new proofs for a merchant
+router.post(
+  "/validation/:merchantId/upload",
+  uploadMemory.array("proofs", 10), // allow multiple files
+  couponsController.uploadMerchantProofs
+);
+
+// Delete a proof
+router.delete("/validation/proof/:proofId", couponsController.deleteProof);
 
 export default router;
