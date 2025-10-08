@@ -1,5 +1,6 @@
 // src/controllers/couponsController.js
 import { uploadImageBuffer } from "../services/storageService.js";
+import { deleteFilesByUrls } from "../services/deleteFilesByUrl.js";
 import * as CouponsRepo from "../dbhelper/CouponsRepo.js";
 import sharp from "sharp";
 
@@ -317,56 +318,6 @@ export async function getMerchantProofs(req, res) {
   }
 }
 
-// POST /api/coupons/validation/:merchantId/upload
-// export async function uploadMerchantProofs(req, res) {
-//   try {
-//     const merchantId = Number(req.params.merchantId);
-//     if (!merchantId)
-//       return res
-//         .status(400)
-//         .json({ data: null, error: { message: "Invalid merchant ID" } });
-
-//     const files = req.files || [];
-//     if (!files.length)
-//       return res
-//         .status(400)
-//         .json({ data: null, error: { message: "No files uploaded" } });
-
-//     const uploadedFiles = []; // will collect { url, filename } objects
-
-//     for (const file of files) {
-//       const { url, error } = await uploadImageBuffer(
-//         BUCKET,
-//         PROOF_FOLDER,
-//         file.buffer,
-//         file.originalname,
-//         file.mimetype
-//       );
-//       if (error)
-//         return res.status(500).json({
-//           data: null,
-//           error: { message: "Storage upload failed", details: error },
-//         });
-
-//       uploadedFiles.push({ url, filename: file.originalname });
-//     }
-
-//     // Use the repo's bulk insert (uploadProofs)
-//     const inserted = await CouponsRepo.uploadProofs(merchantId, uploadedFiles);
-
-//     return res.status(201).json({ data: inserted, error: null });
-//   } catch (err) {
-//     console.error("uploadMerchantProofs error:", err);
-//     return res.status(500).json({
-//       data: null,
-//       error: {
-//         message: "Error uploading proofs",
-//         details: err?.message || err,
-//       },
-//     });
-//   }
-// }
-
 // Requires: import sharp from "sharp"; at top of file
 // Also requires BUCKET and PROOF_FOLDER constants defined (or use process.env)
 
@@ -427,12 +378,10 @@ export async function uploadMerchantProofs(req, res) {
 
       if (uploadErr) {
         console.error("Storage upload failed:", uploadErr);
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Storage upload failed", details: uploadErr },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Storage upload failed", details: uploadErr },
+        });
       }
 
       uploadedEntries.push({ filename: upName, url });
@@ -469,7 +418,27 @@ export async function deleteProof(req, res) {
         .status(400)
         .json({ data: null, error: { message: "Invalid proof ID" } });
 
-    const deleted = await CouponsRepo.removeProof(proofId); // implement in DB helper
+    const { data: proof, error: fetchError } = await supabase
+      .from("merchant_proofs")
+      .select("id, image_url")
+      .eq("id", proofId)
+      .single();
+    if (fetchError) throw fetchError;
+
+    // 2. Delete from storage
+    let urls = [];
+    urls.push(proof.image_url);
+    
+    try {
+      if (urls.length) await deleteFilesByUrls(BUCKET, urls);
+    } catch (fileErr) {
+      console.error(
+        "Merchant Proof deletion failed:",
+        fileErr?.message || fileErr
+      );
+    }
+
+    const deleted = await CouponsRepo.deleteProof(proofId); // implement in DB helper
     if (!deleted)
       return res
         .status(500)
