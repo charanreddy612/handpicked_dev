@@ -1,6 +1,7 @@
 // src/components/coupons/AddProofModal.jsx
 import React, { useState } from "react";
 import { uploadProofs } from "../../services/couponsService";
+import useEscClose from "../hooks/useEscClose";
 
 export default function AddProofModal({ merchant, onClose, onSave }) {
   const [files, setFiles] = useState([]);
@@ -26,10 +27,10 @@ export default function AddProofModal({ merchant, onClose, onSave }) {
 
     setSaving(true);
     const fd = new FormData();
-    files.forEach(f => fd.append("proofs", f)); 
+    files.forEach((f) => fd.append("proofs", f));
 
     try {
-      const { data, error } = await uploadProofs(merchant.id,fd);
+      const { data, error } = await uploadProofs(merchant.id, fd);
       if (error) {
         setError(error.message || "Failed to add proofs.");
       } else {
@@ -43,6 +44,8 @@ export default function AddProofModal({ merchant, onClose, onSave }) {
       setSaving(false);
     }
   };
+
+  useEscClose(onClose);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
