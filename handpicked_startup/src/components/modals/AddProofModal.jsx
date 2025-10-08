@@ -29,9 +29,9 @@ export default function AddProofModal({ merchant, onClose, onSave }) {
     fd.append("files", files[0]);
 
     try {
-      const { data, error } = await uploadProofs(fd);
+      const { data, error } = await uploadProofs(merchant.id,fd);
       if (error) {
-        setError(apiError.message || "Failed to add proofs.");
+        setError(error.message || "Failed to add proofs.");
       } else {
         onSave?.();
         onClose();
