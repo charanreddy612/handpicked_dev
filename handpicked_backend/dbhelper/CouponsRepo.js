@@ -1,5 +1,6 @@
 // src/dbhelper/CouponsRepo.js
 import { supabase } from "./dbclient.js";
+import { deleteFilesByUrls } from "../services/deleteFilesByUrl.js";
 
 function toInt(v) {
   const n = Number(v);
@@ -200,7 +201,26 @@ export async function fetchMerchantProofs(merchantId, page = 1, limit = 10) {
 }
 
 // Delete a proof by ID
-export async function deleteProof(proofId) {
+export async function deleteProof(proofId, BUCKET) {
+  const { data: proof, error: fetchError } = await supabase
+    .from("merchant_proofs")
+    .select("id, image_url")
+    .eq("id", proofId)
+    .single();
+  if (fetchError) throw fetchError;
+
+  // 2. Delete from storage
+  let urls = [];
+  urls.push(proof.image_url);
+
+  try {
+    if (urls.length) await deleteFilesByUrls(BUCKET, urls);
+  } catch (fileErr) {
+    console.error(
+      "Merchant Proof deletion failed:",
+      fileErr?.message || fileErr
+    );
+  }
   const { error } = await supabase
     .from("merchant_proofs")
     .delete()

@@ -1,6 +1,5 @@
 // src/controllers/couponsController.js
 import { uploadImageBuffer } from "../services/storageService.js";
-import { deleteFilesByUrls } from "../services/deleteFilesByUrl.js";
 import * as CouponsRepo from "../dbhelper/CouponsRepo.js";
 import sharp from "sharp";
 
@@ -418,27 +417,7 @@ export async function deleteProof(req, res) {
         .status(400)
         .json({ data: null, error: { message: "Invalid proof ID" } });
 
-    const { data: proof, error: fetchError } = await supabase
-      .from("merchant_proofs")
-      .select("id, image_url")
-      .eq("id", proofId)
-      .single();
-    if (fetchError) throw fetchError;
-
-    // 2. Delete from storage
-    let urls = [];
-    urls.push(proof.image_url);
-    
-    try {
-      if (urls.length) await deleteFilesByUrls(BUCKET, urls);
-    } catch (fileErr) {
-      console.error(
-        "Merchant Proof deletion failed:",
-        fileErr?.message || fileErr
-      );
-    }
-
-    const deleted = await CouponsRepo.deleteProof(proofId); // implement in DB helper
+    const deleted = await CouponsRepo.deleteProof(proofId, BUCKET);
     if (!deleted)
       return res
         .status(500)
