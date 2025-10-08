@@ -26,7 +26,7 @@ export default function AddProofModal({ merchant, onClose, onSave }) {
 
     setSaving(true);
     const fd = new FormData();
-    fd.append("files", files[0]);
+    files.forEach(f => fd.append("proofs", f)); 
 
     try {
       const { data, error } = await uploadProofs(merchant.id,fd);

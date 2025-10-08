@@ -109,9 +109,7 @@ export async function deleteProof(proofId) {
 // Upload new proofs for a merchant
 export async function uploadProofs(merchantId, formData) {
   try {
-    const res = await http.post(`/coupons/validation/${merchantId}/upload`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await http.post(`/coupons/validation/${merchantId}/upload`, formData);
     return { data: res.data?.data ?? null, error: null };
   } catch (err) {
     return { data: null, error: err };
