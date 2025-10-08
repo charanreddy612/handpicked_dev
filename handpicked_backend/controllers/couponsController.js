@@ -32,15 +32,13 @@ export async function listCoupons(req, res) {
     const { rows, total } = await CouponsRepo.list(params);
     return res.json({ data: { rows, total }, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error listing coupons",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error listing coupons",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -50,15 +48,13 @@ export async function getCoupon(req, res) {
     const data = await CouponsRepo.getById(req.params.id);
     return res.json({ data, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error fetching coupon",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error fetching coupon",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -105,12 +101,10 @@ export async function createCoupon(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Image upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Image upload failed", details: error },
+        });
       payload.image_url = url;
     }
     if (f.proof_image?.[0]) {
@@ -123,27 +117,23 @@ export async function createCoupon(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Proof image upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Proof image upload failed", details: error },
+        });
       payload.proof_image_url = url;
     }
 
     const created = await CouponsRepo.insert(payload);
     return res.status(201).json({ data: created, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error creating coupon",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error creating coupon",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -214,12 +204,10 @@ export async function updateCoupon(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Image upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Image upload failed", details: error },
+        });
       patch.image_url = url;
     }
     if (f.proof_image?.[0]) {
@@ -232,27 +220,23 @@ export async function updateCoupon(req, res) {
         file.mimetype
       );
       if (error)
-        return res
-          .status(500)
-          .json({
-            data: null,
-            error: { message: "Proof image upload failed", details: error },
-          });
+        return res.status(500).json({
+          data: null,
+          error: { message: "Proof image upload failed", details: error },
+        });
       patch.proof_image_url = url;
     }
 
     const updated = await CouponsRepo.update(id, patch);
     return res.json({ data: updated, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error updating coupon",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error updating coupon",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -263,15 +247,13 @@ export async function togglePublish(req, res) {
     const data = await CouponsRepo.togglePublish(id);
     return res.json({ data, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error toggling publish",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error toggling publish",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -282,15 +264,13 @@ export async function toggleEditorPick(req, res) {
     const data = await CouponsRepo.toggleEditorPick(id);
     return res.json({ data, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error toggling editor pick",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error toggling editor pick",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -305,15 +285,13 @@ export async function deleteCoupon(req, res) {
         .json({ data: null, error: { message: "Failed to delete coupon" } });
     return res.json({ data: { id }, error: null });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        data: null,
-        error: {
-          message: "Error deleting coupon",
-          details: err?.message || err,
-        },
-      });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error deleting coupon",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -324,12 +302,18 @@ export async function deleteCoupon(req, res) {
 export async function getMerchantProofs(req, res) {
   try {
     const merchantId = Number(req.params.merchantId);
-    if (!merchantId) return res.status(400).json({ data: [], error: { message: "Invalid merchant ID" } });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 10);
 
-    const proofs = await CouponsRepo.listProofs(merchantId); // you will create this DB helper
-    return res.json({ data: proofs, error: null });
+    const data = await MerchantProofsRepo.fetchMerchantProofs(
+      merchantId,
+      page,
+      limit
+    );
+
+    return res.json({ data, error: null });
   } catch (err) {
-    return res.status(500).json({ data: [], error: { message: "Error fetching proofs", details: err?.message || err } });
+    return res.status(500).json({ data: null, error: err.message || err });
   }
 }
 
@@ -340,10 +324,16 @@ export async function getMerchantProofs(req, res) {
 export async function uploadMerchantProofs(req, res) {
   try {
     const merchantId = Number(req.params.merchantId);
-    if (!merchantId) return res.status(400).json({ data: null, error: { message: "Invalid merchant ID" } });
+    if (!merchantId)
+      return res
+        .status(400)
+        .json({ data: null, error: { message: "Invalid merchant ID" } });
 
     const files = req.files || [];
-    if (!files.length) return res.status(400).json({ data: null, error: { message: "No files uploaded" } });
+    if (!files.length)
+      return res
+        .status(400)
+        .json({ data: null, error: { message: "No files uploaded" } });
 
     const uploadedProofs = [];
 
@@ -355,12 +345,16 @@ export async function uploadMerchantProofs(req, res) {
         file.originalname,
         file.mimetype
       );
-      if (error) return res.status(500).json({ data: null, error: { message: "Upload failed", details: error } });
+      if (error)
+        return res.status(500).json({
+          data: null,
+          error: { message: "Upload failed", details: error },
+        });
 
       // Save proof record to DB
       const proofRecord = await CouponsRepo.insertProof({
         merchant_id: merchantId,
-        image_url: url
+        image_url: url,
       });
 
       uploadedProofs.push(proofRecord);
@@ -368,7 +362,13 @@ export async function uploadMerchantProofs(req, res) {
 
     return res.status(201).json({ data: uploadedProofs, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error uploading proofs", details: err?.message || err } });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error uploading proofs",
+        details: err?.message || err,
+      },
+    });
   }
 }
 
@@ -379,13 +379,25 @@ export async function uploadMerchantProofs(req, res) {
 export async function deleteProof(req, res) {
   try {
     const proofId = Number(req.params.proofId);
-    if (!proofId) return res.status(400).json({ data: null, error: { message: "Invalid proof ID" } });
+    if (!proofId)
+      return res
+        .status(400)
+        .json({ data: null, error: { message: "Invalid proof ID" } });
 
     const deleted = await CouponsRepo.removeProof(proofId); // implement in DB helper
-    if (!deleted) return res.status(500).json({ data: null, error: { message: "Failed to delete proof" } });
+    if (!deleted)
+      return res
+        .status(500)
+        .json({ data: null, error: { message: "Failed to delete proof" } });
 
     return res.json({ data: { id: proofId }, error: null });
   } catch (err) {
-    return res.status(500).json({ data: null, error: { message: "Error deleting proof", details: err?.message || err } });
+    return res.status(500).json({
+      data: null,
+      error: {
+        message: "Error deleting proof",
+        details: err?.message || err,
+      },
+    });
   }
 }

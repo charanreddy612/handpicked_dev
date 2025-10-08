@@ -75,14 +75,26 @@ export async function toggleEditorPick(id) {
 
 // === New functions for validation ===
 // Fetch proofs for a merchant
-export async function fetchMerchantProofs(merchantId) {
+export async function fetchMerchantProofs(merchantId, page = 1, limit = 10) {
   try {
-    const res = await http.get(`/coupons/validation/${merchantId}`);
-    return { data: Array.isArray(res.data?.data) ? res.data.data : [], error: null };
+    const qp = new URLSearchParams();
+    qp.set("page", String(page));
+    qp.set("limit", String(limit));
+
+    const res = await http.get(`/coupons/validation/${merchantId}?${qp.toString()}`);
+    // Assuming API returns { data: { rows: [...], total: N } }
+    return {
+      data: {
+        rows: Array.isArray(res.data?.data?.rows) ? res.data.data.rows : [],
+        total: Number(res.data?.data?.total || 0),
+      },
+      error: null,
+    };
   } catch (err) {
-    return { data: [], error: err };
+    return { data: { rows: [], total: 0 }, error: err };
   }
 }
+
 
 // Delete a proof by ID
 export async function deleteProof(proofId) {

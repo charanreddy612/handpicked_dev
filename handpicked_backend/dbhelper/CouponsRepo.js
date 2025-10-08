@@ -175,16 +175,28 @@ export async function countTopCoupons() {
 
 // === Merchant Proofs ===
 
-// Fetch proofs for a merchant
-export async function fetchMerchantProofs(merchantId) {
-  const { data, error } = await supabase
+// Fetch Proofs for a merchant with pagination
+export async function fetchMerchantProofs(merchantId, page = 1, limit = 10) {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data: rows, error } = await supabase
     .from("merchant_proofs")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("merchant_id", merchantId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  return data || [];
+
+  const { count, error: cErr } = await supabase
+    .from("merchant_proofs")
+    .select("id", { count: "exact", head: true })
+    .eq("merchant_id", merchantId);
+
+  if (cErr) throw cErr;
+
+  return { rows: rows || [], total: count || 0 };
 }
 
 // Delete a proof by ID

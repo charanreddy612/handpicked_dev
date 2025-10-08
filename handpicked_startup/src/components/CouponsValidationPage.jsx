@@ -9,12 +9,17 @@ import AddProofModal from "../components/modals/AddProofModal.jsx";
 
 export default function CouponsValidationPage() {
   const [merchants, setMerchants] = useState([]);
+  const [merchantSearch, setMerchantSearch] = useState("");
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [proofs, setProofs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 10;
 
+  // Fetch merchants
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -32,24 +37,42 @@ export default function CouponsValidationPage() {
     };
   }, []);
 
+  // Filtered merchants for search
+  const filteredMerchants = merchants.filter(
+    (m) =>
+      m.name?.toLowerCase().includes(merchantSearch.toLowerCase()) ||
+      m.slug?.toLowerCase().includes(merchantSearch.toLowerCase())
+  );
+
+  // Fetch proofs for selected merchant with pagination
   useEffect(() => {
     if (!selectedMerchant) {
       setProofs([]);
+      setPage(1);
+      setTotalPages(1);
       return;
     }
     let mounted = true;
     setLoading(true);
     (async () => {
-      const { data, error } = await fetchMerchantProofs(selectedMerchant.id);
+      const { data, error } = await fetchMerchantProofs(
+        selectedMerchant.id,
+        page,
+        PAGE_SIZE
+      );
       if (!mounted) return;
-      if (!error) setProofs(data);
-      else console.error("Error fetching proofs:", error);
+      if (!error) {
+        setProofs(data.rows || []);
+        setTotalPages(Math.ceil((data.total || 0) / PAGE_SIZE));
+      } else {
+        console.error("Error fetching proofs:", error);
+      }
       setLoading(false);
     })();
     return () => {
       mounted = false;
     };
-  }, [selectedMerchant, refreshKey]);
+  }, [selectedMerchant, refreshKey, page]);
 
   const handleDeleteProof = async (id) => {
     if (!window.confirm("Delete this proof?")) return;
@@ -73,20 +96,27 @@ export default function CouponsValidationPage() {
         )}
       </div>
 
-      {/* Merchant Selector */}
+      {/* Merchant Selector with Search */}
       <div className="mb-4">
-        <label className="block mb-2 font-medium">Select Merchant</label>
+        <label className="block mb-2 font-medium">Search Merchant</label>
+        <input
+          type="text"
+          placeholder="Search by name or slug..."
+          value={merchantSearch}
+          onChange={(e) => setMerchantSearch(e.target.value)}
+          className="w-full border px-3 py-2 rounded mb-2"
+        />
         <select
           value={selectedMerchant?.id || ""}
           onChange={(e) =>
             setSelectedMerchant(
-              merchants.find((m) => m.id === e.target.value) || null
+              merchants.find((m) => m.id === Number(e.target.value)) || null
             )
           }
           className="w-full border px-3 py-2 rounded"
         >
           <option value="">-- Select Merchant --</option>
-          {merchants.map((m) => (
+          {filteredMerchants.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name || m.slug}
             </option>
@@ -95,7 +125,7 @@ export default function CouponsValidationPage() {
       </div>
 
       {/* Proofs Table */}
-      <div className="border rounded">
+      <div className="border rounded mb-4">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50">
@@ -142,6 +172,29 @@ export default function CouponsValidationPage() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mb-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* Add Proof Modal */}
       {showAddModal && selectedMerchant && (
