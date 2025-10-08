@@ -317,10 +317,7 @@ export async function getMerchantProofs(req, res) {
   }
 }
 
-// -----------------------------
-// Upload new proofs for a merchant
-// POST /coupons/validation/:merchantId/upload
-// -----------------------------
+// POST /api/coupons/validation/:merchantId/upload
 export async function uploadMerchantProofs(req, res) {
   try {
     const merchantId = Number(req.params.merchantId);
@@ -335,7 +332,7 @@ export async function uploadMerchantProofs(req, res) {
         .status(400)
         .json({ data: null, error: { message: "No files uploaded" } });
 
-    const uploadedProofs = [];
+    const uploadedFiles = []; // will collect { url, filename } objects
 
     for (const file of files) {
       const { url, error } = await uploadImageBuffer(
@@ -348,20 +345,18 @@ export async function uploadMerchantProofs(req, res) {
       if (error)
         return res.status(500).json({
           data: null,
-          error: { message: "Upload failed", details: error },
+          error: { message: "Storage upload failed", details: error },
         });
 
-      // Save proof record to DB
-      const proofRecord = await CouponsRepo.insertProof({
-        merchant_id: merchantId,
-        image_url: url,
-      });
-
-      uploadedProofs.push(proofRecord);
+      uploadedFiles.push({ url, filename: file.originalname });
     }
 
-    return res.status(201).json({ data: uploadedProofs, error: null });
+    // Use the repo's bulk insert (uploadProofs)
+    const inserted = await CouponsRepo.uploadProofs(merchantId, uploadedFiles);
+
+    return res.status(201).json({ data: inserted, error: null });
   } catch (err) {
+    console.error("uploadMerchantProofs error:", err);
     return res.status(500).json({
       data: null,
       error: {
